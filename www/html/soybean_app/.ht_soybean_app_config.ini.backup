@@ -1,0 +1,6 @@
+[database]
+username = root
+password = Icui4cuss
+
+[images]
+image_dir = /home/maswor/Desktop/PointCloudISU/WebApp/www/html/sds_images

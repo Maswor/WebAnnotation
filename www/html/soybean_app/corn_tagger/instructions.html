@@ -1,0 +1,62 @@
+<!DOCTYPE html> 
+<html>
+<head>
+
+	<meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+	<meta content="utf-8" http-equiv="encoding">
+	
+	<title>Image Tagger Instructions</title>
+</head>
+
+<body>	
+	<h1>Image Tagger Documentation & Instructions</h1>
+	<a href='soybean-tagger.html'>Main site</a>
+	
+	
+	<div id='content'>
+		<div id='about'>
+		<h3>About</h3>
+		Image Tagger is an application used for marking images. It cycles through a directory of corn kernel images, allowing users to mark the outline of the embryo.	
+		This was developed by Jacob Stimes in the Ganapathysubramanian group (<a href='www.me.iastate.edu/bglab'>www.me.iastate.edu/bglab</a>). If you experience any issues, have questions, or would like to share feedback, please reach out to Jacob at <a href='mailto:jstimes@iastate.edu'>jstimes@iastate.edu</a> or Baskar Ganapathysubramanian at <a href='mailto:baskarg@iastate.edu'>baskarg@iastate.edu</a>.<br><br>
+		Funding from the Plant Science Institute and ISU PIIR is acknowledged.
+		</div>
+		
+		<div id='general'>
+		<h3>General Instructions:</h3>
+		<ol>
+			<!--li>Click the 'Upload Disease Options' to upload the list of diseases you wish to track. The file format expected is JSON. <a href='example-diseases.json' target=new>Click here</a> to see an example file format (note that there can not be a comma after the last entry). 'id' must contain no spaces. 'color' is optional. If not supplied, it will select colors from a default list.-->
+			
+			<li><!--Your options should appear in the 'All options' list.-->After logging in with a username, the program is already in marking mode.
+			
+			<li>Use the mouse cursor to draw a region of interest on the picture currently displayed.
+			
+			<li>Once you are done marking an image, click 'Save/Next Image'. The marked image will be replaced with the next one, and all data is reset. Continue this procedure to keep marking images, your progress is shown in the upper right corner. 
+			
+			<li>A message will be shown when you have marked all images.
+		</ol>
+		</div>
+		
+		<div id='options'>
+		<h3>Options and Controls:</h3>
+		<ul>			
+			<li>'Clear' - resets all markings and data for the current image 
+			
+			<li>'Undo' - removes the last drawn marking, and data associated with it 
+			
+			<li>'Save/Next Image' - Saves markings on current image and moves on to the next image.
+		</ul>
+		</div>
+		
+		<!--div id='output'>
+		<h3>JSON output explanation:</h3>
+		<p>
+		The output file that is downloaded is pretty hard to read, I'd recommend you paste the text into this link, and then press 'Format' so that it's more neat.<br><br>
+		For each disease that was marked on the image, there is an entry with that diseases id. Each of those diseases contains an array for each path that was drawn for that disease. Each path array contains a subarray for each point. The beginning point has an "M", then the X-coordinate, then the Y-coordinate. Each successive point has an "L", followed by the X-coordinate, then the Y-coordinate. The end of the path is marked with a "Z", and this will be the last subarray in the path array. Note that the last point is connected with the first point. The X-coordinate is measured from the left edge of the image, and is in pixels. The Y-coordinate is measured from the ?? edge of the image, also in pixels.
+		</p>
+		</div-->
+		<br><br><br>
+	</div>
+	
+</body>
+
+</html>

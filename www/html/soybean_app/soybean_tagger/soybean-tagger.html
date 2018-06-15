@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+  <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+  <meta content="utf-8" http-equiv="encoding">
+
+  <!-- jQuery and jQuery UI -->
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+  <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/themes/smoothness/jquery-ui.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+
+  <!-- for draggable to work on mobile -->
+  <script src="jquery.ui.touch-punch.js"></script>
+
+  <!-- Raphael (for drawing on images) -->
+  <script type="text/javascript" src="raphael.min.js"></script>
+  <script type="text/javascript" src="raphael.export.js"></script>
+
+  <!-- CanVG (for putting svg into a canvas) -->
+  <script type="text/javascript" src="https://canvg.github.io/canvg/rgbcolor.js"></script>
+  <script type="text/javascript" src="https://canvg.github.io/canvg/StackBlur.js"></script>
+  <script type="text/javascript" src="https://canvg.github.io/canvg/canvg.js"></script>
+
+  <!-- Actual application code -->
+  <script type="text/javascript" src='soybean-tagger.js'></script>
+
+  <!-- My styling -->
+  <link rel='stylesheet' href='style.css'>
+
+  <title>Image Tagger</title>
+</head>
+
+<body>
+  <div id='header'>
+    <div id='topLinks'>
+      <span id='siteTitle'>Image Tagger</span> &nbsp;&nbsp;&nbsp;
+      <a href='instructions.html' target=new>Instructions</a>
+
+      <span style='float: right;' id='usernameDisplay'></span>
+    </div>
+    <hr />
+    <table id='settingsTable'>
+      <tr>
+        <td>
+          <label><input type='checkbox' id='displayToggle'>Show Selected Disease Only</label>
+        </td>
+        <td>
+          <input type='button' id='clear' value='Clear'>
+        </td>
+        <td>
+          <input type='button' id='undo' value='Undo'>
+        </td>
+
+        <td>
+          <label><input type='button' id='backBtn' value='Redo Previous Image'></label>
+        </td>
+        <!--td>
+					<input type='button' id='uploadImagesBtn' value='Upload Image Set' disabled>
+				</td-->
+      </tr>
+      <tr>
+        <td>
+          <label><input type='checkbox' id='fillSelection'>Fill selection</label>
+        </td>
+        <td>
+          <input type='button' id='clearSelected' value='Clear Selected Disease'>
+        </td>
+        <td>
+          <input type='button' id='save' value='Save/Next Image'>
+        </td>
+        <td>
+          <label><input type='button' id='poorQualityBtn' value='Mark as Poor Quality'></label>
+        </td>
+        <!--td>
+					<input type='button' id='uploadDiseasesBtn' value='Upload Disease Options'>
+				</td-->
+      </tr>
+    </table>
+  </div>
+
+  <hr />
+
+  <!-- If you change the width/height, make sure you change 
+		the canvas's dimensions too, and change 
+		CANVAS_SIZE in the js file -->
+
+  <span id='filename'></span><br><br>
+  <div id="wrapper">
+    <div style="width: 512px; height: 512px;" id="canvas">
+    </div>
+
+    <!--canvas height = 250-->
+
+
+    <!--canvas style='margin-top: 550px;' id='outputCanvas' style='display: Healthy;' width=400 height=400></canvas-->
+
+    <div style='float: right;' id='rightPanel'>
+
+      <div id='identified'>
+        Identified diseases:
+        <ul id="idList" class="connectedSortable">
+          <li id='Healthy' class="ui-state-highlight">Healthy</li>
+        </ul>
+      </div>
+
+      <div id='options'>
+        All options:
+        <ul id="opList" class="connectedSortable">
+
+          <li id='a' class="ui-state-default">
+            <span class="input-color">
+						<span class="color-box" style="background-color: #800080;"></span>
+            </span>
+            <span class='diseaseName'>Disease A</span>
+          </li>
+
+          <li id='b' class="ui-state-default">
+            <span class="input-color">
+					  <span class="color-box" style="background-color: #00FFFF;"></span>
+            </span>
+            <span class='diseaseName'>Disease B</span>
+          </li>
+
+          <li id='c' class="ui-state-default">
+            <span class="input-color">
+					  <span class="color-box" style="background-color: #2222EE;"></span>
+            </span>
+            <span class='diseaseName'>Disease C</span>
+          </li>
+
+          <li id='d' class="ui-state-default">
+            <span class="input-color">
+					  <span class="color-box" style="background-color: #74BAEC;"></span>
+            </span>
+            <span class='diseaseName'>Disease D</span>
+          </li>
+
+          <li id='e' class="ui-state-default">
+            <span class="input-color">
+					  <span class="color-box" style="background-color: #FF00FF;"></span>
+            </span>
+            <span class='diseaseName'>Disease E</span>
+          </li>
+
+          <li id='f' class="ui-state-default">
+            <span class="input-color">
+					  <span class="color-box" style="background-color: #CE93D8;"></span>
+            </span>
+            <span class='diseaseName'>Disease F</span>
+          </li>
+
+        </ul>
+      </div>
+      <!-- Options div -->
+
+      <br>
+
+    </div>
+    <!-- Right panel div -->
+    <div style='float: right; margin-right: 10px'>
+      Disease Severities<br> (enter value between 0-100):
+      <div id='diseaseSeverities'>
+
+      </div>
+
+    </div>
+  </div>
+  <!-- Wrapper div -->
+
+  <!-- popup modal, not shown until button is pressed -->
+  <div id='uploadDiseasesModal' title='Upload Disease Options'>
+    <input type='file' id='diseasesFile'><br><br>
+    <input type='button' id='submitDiseasesBtn' value='Submit' disabled>
+  </div>
+
+  <!-- Login popup, appears on page load -->
+  <div id='loginModal' title='Login'>
+    <label>Username: <input type='text' id='username' ></label><br><br>
+    <input type='button' id='loginBtn' value='Login'>
+    <br><br>
+    <p>
+      Your progress will be tracked through this username. If you haven't logged in before, an account will be created for you with the username you enter. If you plan to take a break from image tagging and resume later, it is important you remember this username and use the same one.
+    </p>
+  </div>
+
+</body>
+
+</html>

@@ -1,0 +1,521 @@
+<!DOCTYPE html> 
+<html>
+<head>
+
+	<meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+	<meta content="utf-8" http-equiv="encoding">
+
+   <!-- jQuery and jQuery UI -->
+   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+   <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/themes/smoothness/jquery-ui.css">
+   <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+   
+   <!-- for draggable to work on mobile -->
+   <script src="jquery.ui.touch-punch.js"></script>
+   
+   <!-- Raphael (for drawing on images) -->
+   <script type="text/javascript" src="raphael.min.js"></script>
+   <script type="text/javascript" src="raphael.export.js"></script>    
+   
+    <!-- CanVG (for putting svg into a canvas) -->
+    <script type="text/javascript" src="https://canvg.github.io/canvg/rgbcolor.js"></script> 
+	<script type="text/javascript" src="https://canvg.github.io/canvg/StackBlur.js"></script>
+	<script type="text/javascript" src="https://canvg.github.io/canvg/canvg.js"></script> 
+	
+	<!-- Actual application code -->
+	<!--script type="text/javascript" src='soybean-tagger.js'></script-->
+	
+	<!-- To generate zips of image files -->
+	<script type="text/javascript" src="/soybean_app/soybean_tagger/lib/zip.js"></script>
+	<script type="text/javascript" src="/soybean_app/soybean_tagger/lib/zip-ext.js"></script>
+	
+	<!-- My styling -->
+	<link rel='stylesheet' href='style.css'>
+	
+	<style>
+		#table td .originalImg {
+			width: 512px;
+			height: 512px;
+			display: block;
+		}
+		#table td {
+			
+		}
+	</style>
+	
+	<script>
+		var obj = this;
+		
+		var data = [];
+		
+		var inData;
+		
+		zip.workerScriptsPath = "/soybean_app/soybean_tagger/lib/";
+		//var paper;
+		var BASE_PATH = "https://baskar-group.me.iastate.edu/soybean_app/other_tagger/api/";
+		var GET_DATA_ENDPOINT = "getAllOutput.php";
+		var GET_DISEASES_ENDPOINT = "getDiseases.php";
+		
+		var DEFAULT_COLORS = [
+			"#800080",
+			"#00FFFF",
+			"#2222EE",
+			"#74BAEC",
+			"#FF00FF",
+			"#CE93D8",
+			"#FD8012",
+			"#9A5656",
+			"#57504B"
+		];
+		
+		var diseases = [];
+		
+		var username;
+		
+		function get(name){
+		   if(name=(new RegExp('[?&]'+encodeURIComponent(name)+'=([^&]*)')).exec(location.search))
+			  return decodeURIComponent(name[1]);
+		}
+		
+		/*
+		function compressAndDownloadImage(uri){
+			// creates a zip storing the file "lorem.txt" with blob as data
+			// the zip will be stored into a Blob object (zippedBlob)
+			//var dataOnly = uri.substr(uri.indexOf(',')+1);
+			zipDataUri("image.png", uri, function(blob) {
+				var URL = URL = obj.webkitURL || obj.mozURL || obj.URL;
+				var url  = URL.createObjectURL(blob)
+			  	forceDownload(url, ".zip");
+			});
+		}*/
+		
+		function forceDownload(dataUrl, downloadName) {
+			var a = document.createElement('a');
+			a.setAttribute('href', dataUrl);
+			a.setAttribute('download', downloadName);
+
+			if (document.createEvent) {
+				var event = document.createEvent('MouseEvents');
+				event.initEvent('click', true, true);
+				a.dispatchEvent(event);
+			}
+			else {
+				a.click();
+			}
+		}
+		/*
+		function zipDataUri(filename, uri, callback) {
+		  // use a zip.BlobWriter object to write zipped data into a Blob object
+		  zip.createWriter(new zip.BlobWriter(), function(zipWriter) {
+			zipWriter.add(filename, new zip.Data64URIReader(uri), function() {
+			  // close the writer and calls callback function
+			  zipWriter.close(callback);
+			});
+		  }, onerror);
+		}*/
+		
+		var requestFileSystem = obj.webkitRequestFileSystem || obj.mozRequestFileSystem || obj.requestFileSystem;
+
+		function onerror(message) {
+			alert(message);
+		}
+
+		function createTempFile(callback) {
+			var tmpFilename = "tmp.zip";
+			requestFileSystem(TEMPORARY, 4 * 1024 * 1024 * 1024, function(filesystem) {
+				function create() {
+					filesystem.root.getFile(tmpFilename, {
+						create : true
+					}, function(zipFile) {
+						callback(zipFile);
+					});
+				}
+
+				filesystem.root.getFile(tmpFilename, null, function(entry) {
+					entry.remove(create, create);
+				}, create);
+			});
+		}
+		
+		var model = (function() {
+			var zipFileEntry, zipWriter, writer, creationMethod, URL = obj.webkitURL || obj.mozURL || obj.URL;
+
+			return {
+				setCreationMethod : function(method) {
+					creationMethod = method;
+				},
+				
+				//file should be of form: [{canvasId: "xx", mark_id: "yy"}, ...]
+				addFiles : function addFiles(files, oninit, onadd, onprogress, onend) {
+					var addIndex = 0;
+
+					function nextFile() {
+						var file = files[addIndex];
+						onadd(file);
+						
+						//console.log("Full uri: " + file);
+						var fileData = document.getElementById(file.canvasId).toDataURL("image/png");
+						var dataOnly = fileData.substr(fileData.indexOf(',')+1);
+						//console.log("Base64: " + dataOnly);
+						var name = file.mark_id + ".png";
+						
+						
+						zipWriter.add(name, new zip.Data64URIReader(dataOnly), function() {
+							addIndex++;
+							if (addIndex < files.length)
+								nextFile();
+							else
+								onend();
+						}, onprogress);
+					}
+
+					function createZipWriter() {
+						zip.createWriter(writer, function(writer) {
+							zipWriter = writer;
+							oninit();
+							nextFile();
+						}, onerror);
+					}
+
+					if (zipWriter)
+						nextFile();
+					else if (creationMethod == "Blob") {
+						writer = new zip.Data64URIWriter("image/png");
+						createZipWriter();
+					} else {
+						createTempFile(function(fileEntry) {
+							zipFileEntry = fileEntry;
+							writer = new zip.FileWriter(zipFileEntry);
+							createZipWriter();
+						});
+					}
+				},
+				getBlobURL : function(callback) {
+					zipWriter.close(function(blob) {
+						var blobURL = creationMethod !== "Blob" ? URL.createObjectURL(blob) : zipFileEntry.toURL();
+						callback(blobURL);
+						zipWriter = null;
+					});
+				},
+				getBlob : function(callback) {
+					zipWriter.close(callback);
+				}
+			};
+		})();
+		
+		$(function() {
+		
+			var author = get("author");
+			if(!author){
+				alert("Invalid URL - no author specified");
+				return;
+			}
+			
+			username = author;
+			getDiseases();
+		});
+		
+		function getDiseases() {
+	
+			var url = BASE_PATH + GET_DISEASES_ENDPOINT;
+			$.ajax({
+				url: url,
+				type: 'GET',
+				contentType: 'application/json; charset=utf-8',
+				dataType: 'json',
+				async: true,
+				success: function(response) {
+					for(var i=0; i<response.length; i++){
+						diseases.push({id: response[i].id, name: response[i].name, color: DEFAULT_COLORS[i]});
+					}
+					
+					getImagesForAuthor();
+				},
+				error: function(msg){
+					alert(msg);
+				}
+			});
+			
+		}
+		
+		function prepareDownload() {
+			var downloadButton = document.getElementById("download-button");
+			model.setCreationMethod("File");
+			model.addFiles(data, 
+				function() {
+					//On init,
+				}, 
+				//On add
+				function(file) {
+					console.log("Compressing mark id: " + file.mark_id);
+				}, 
+				//On progress 
+				function(current, total) {
+					
+				}, 
+				//On end
+				function() {
+					alert("Ready to download");
+					downloadButton.addEventListener("click", function(event) {
+						var target = event.target, entry;
+						if (!downloadButton.download) {
+							if (typeof navigator.msSaveBlob == "function") {
+								model.getBlob(function(blob) {
+									navigator.msSaveBlob(blob, filenameInput.value);
+								});
+							} else {
+								model.getBlobURL(function(blobURL) {
+									var clickEvent;
+									clickEvent = document.createEvent("MouseEvent");
+									clickEvent.initMouseEvent("click", true, true, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
+									downloadButton.href = blobURL;
+									downloadButton.download = "output.zip";
+									downloadButton.dispatchEvent(clickEvent);
+									//creationMethodInput.disabled = false;
+									//fileList.innerHTML = "";
+								});
+								event.preventDefault();
+								return false;
+							}
+						}
+					}, false);
+				}
+			);
+			
+			//forceDownload(dataURL, "output.png");
+			
+			
+		}
+		
+		function getImagesForAuthor(){
+			var markedId = $("#mark_id").val();
+				
+			var url = BASE_PATH + GET_DATA_ENDPOINT;
+			//var dataToSend = { author: username };
+			$.ajax({
+				url: url,
+				type: 'GET',
+				//data: dataToSend,
+				contentType: 'application/json; charset=utf-8',
+				dataType: 'json',
+				async: true,
+				success: function(responses) {
+				
+					inData = responses;
+					console.log("Got " + inData.length + " responses");
+					curInData = 0;
+					processNextImage();
+					
+					
+					/*
+					for(var r=0; r<responses.length; r++){
+						var response = responses[r];
+						
+						//console.log(response);
+				
+						addToTable(response, r);
+					}
+				
+					setTimeout(prepareDownload, 10000);
+					*/
+				}
+			
+			});
+			console.log("Sent data request");
+		}
+		
+		var curInData;
+		function processNextImage() {
+			addToTable(inData[curInData], curInData);
+			curInData++;
+			
+			console.log(curInData + " images added");
+			if(curInData < inData.length){
+				setTimeout(function() {
+					processNextImage();
+				}, 100);
+			}
+			else {
+				prepareDownload();
+			}
+		}
+		
+		function addToTable(response, index){
+			var originalId = response.image_id;
+			var mark_id = response.mark_id;
+			var image_url = BASE_PATH + "getImage.php?id=" + originalId;
+			//console.log(image_url);
+			
+			var tr = $("<tr>");
+			
+			var tdInfo = $("<td>");
+			var info = $("<span>", {
+				text: "Author: " + response.author
+			}).appendTo(tdInfo);
+			tdInfo.appendTo(tr);
+			
+			var tdMarked = $("<td>", {
+				witdh: 512,
+				height: 512
+			});
+			var id = "canvas" + index;
+			$("<div>", {
+				id: id,
+				width: 512,
+				height: 512
+			}).appendTo(tdMarked);
+			tdMarked.appendTo(tr);
+			
+			var tdCanvas = $("<td>", {
+				width: 512,
+				height: 512
+			});
+			var id2 = "actualCanvas" + index;
+			$("<canvas>", {
+				id: id2,
+				width: 512,
+				height: 512
+			}).appendTo(tdMarked);
+			tdMarked.appendTo(tr);
+			
+			tr.appendTo("#table");
+			
+			var paper = Raphael(id, 512,512);
+			paper.image(image_url, 0, 0, 512, 512);
+			
+			//console.log(JSON.stringify(response.severities));
+			
+			if(response.path && response.path.length > 2){
+				if(mark_id == 363){
+					console.log(response.path);
+				}
+				var path = JSON.parse(response.path);
+				
+				for (var property in path) {
+					if (path.hasOwnProperty(property)) {
+						var pathsArray = path[property];
+						var color = colorForDisease(property);
+														
+						for(var i=0; i<pathsArray.length; i++){
+							paper.path(pathsArray[i]).attr({stroke: color, 'stroke-width': 2});
+							
+						}
+					}
+				}
+			}
+			
+			
+			var mycanvas = document.getElementById(id2);
+			//var mycontext = mycanvas.getContext('2d');
+			var svg = paper.toSVG();
+			
+			//Takes an SVG image and renders it as an image in a canvas 
+			canvg(mycanvas, svg, { ignoreClear: true } );
+			
+			data.push({canvasId: id2, mark_id: mark_id});
+			
+			/*
+			var dlzip = function() {
+				var dataURL = mycanvas.toDataURL("image/png");
+				//var fileInput = document.getElementById("file-input");
+				//var zipProgress = document.createElement("progress");
+				
+				//var fileList = document.getElementById("file-list");
+				//var filenameInput = document.getElementById("filename-input");
+				//var creationMethodInput = document.getElementById("creation-method-input");
+				//if (typeof requestFileSystem == "undefined")
+				//	creationMethodInput.options.length = 1;
+				
+				var allURLs = [dataURL];
+				
+				var downloadButton = document.getElementById("download-button");
+				model.setCreationMethod("Blob");//("File");
+				model.addFiles(allURLs, 
+					function() {
+						//On init,
+					}, 
+					//On add
+					function(file) {
+						//var li = document.createElement("li");
+						//zipProgress.value = 0;
+						//zipProgress.max = 0;
+						//li.textContent = file.name;
+						//li.appendChild(zipProgress);
+						//fileList.appendChild(li);
+					}, 
+					//On progress 
+					function(current, total) {
+						//zipProgress.value = current;
+						//zipProgress.max = total;
+					}, 
+					//On end
+					function() {
+						//alert("Done");
+					}
+				);
+				
+				//forceDownload(dataURL, "output.png");
+				
+				downloadButton.addEventListener("click", function(event) {
+					var target = event.target, entry;
+					if (!downloadButton.download) {
+						if (typeof navigator.msSaveBlob == "function") {
+							model.getBlob(function(blob) {
+								navigator.msSaveBlob(blob, filenameInput.value);
+							});
+						} else {
+							model.getBlobURL(function(blobURL) {
+								var clickEvent;
+								clickEvent = document.createEvent("MouseEvent");
+								clickEvent.initMouseEvent("click", true, true, window, 0, 0, 0, 0, 0, false, false, false, false, 0, null);
+								downloadButton.href = blobURL;
+								downloadButton.download = "output.zip";
+								downloadButton.dispatchEvent(clickEvent);
+								//creationMethodInput.disabled = false;
+								//fileList.innerHTML = "";
+							});
+							event.preventDefault();
+							return false;
+						}
+					}
+				}, false);
+			
+			};*/
+			//setTimeout(dlzip, 10000);
+		}
+		
+		function colorForDisease(disease){
+			for(var i=0; i<diseases.length; i++){
+				if(diseases[i].id == disease){
+					return diseases[i].color;
+				}
+			}
+			return diseases[diseases.length - 1].color;
+		}
+		</script>
+ 
+ 	<title>Image Tagger</title>
+</head>
+
+<body>
+	<div id='header'>
+		<span id='siteTitle'>Image Tagger</span><a id="download-button" href="#"><input type='button' value='Download'></a>
+		&nbsp;&nbsp;&nbsp;
+		<a href='instructions.html' target=new>Instructions</a>
+		&nbsp;&nbsp;&nbsp;
+		<a href='soybean-tagger.html' target=new>Back to Main Site</a>
+		
+		<span style='float: right;' id='usernameDisplay'></span>
+	</div>
+	
+	<hr />
+	
+	<div id='wrapper'>
+		<table id='table' width=100%>
+		
+		</table>
+	</div>
+	
+</body>
+
+</html>
