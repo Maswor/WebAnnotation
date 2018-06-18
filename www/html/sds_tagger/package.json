@@ -1,0 +1,28 @@
+{
+  "name": "soybean_tagger",
+  "version": "1.0.0",
+  "description": "Tagging soybean",
+  "main": "soybean-tagger.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Misc",
+  "license": "MIT",
+  "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-core": "^6.26.3",
+    "babel-loader": "^7.1.4",
+    "babel-preset-env": "^1.7.0",
+    "css-loader": "^0.28.11",
+    "eslint": "^4.19.1",
+    "eslint-config-airbnb-base": "^12.1.0",
+    "eslint-plugin-import": "^2.12.0",
+    "jquery": "^3.3.1",
+    "style-loader": "^0.21.0",
+    "webpack": "^4.12.0"
+  },
+  "dependencies": {}
+}
