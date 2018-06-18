@@ -276,24 +276,22 @@ $(() => {
     }
   });
 
-  /*
-	 Called when user clicks on Raphael drawing context (image)
-	 basically inits the path with the mouse coord,
-	 and sets the mouseDown flag so other callbacks know
-	 if button is clicked or not
-	*/
-  const onDown = function (pageX, pageY) {
+  /* Called when user clicks on Raphael drawing context (image)
+   * basically inits the path with the mouse coord,
+   * and sets the mouseDown flag so other callbacks know
+   * if button is clicked or not */
+  function onDown(DomElem, pageX, pageY) {
     if (selected === 'Healthy') { return; }
 
     mouseDown = true;
 
-    const parentOffset = $(this).parent().offset();
+    const parentOffset = $(DomElem).parent().offset();
     const X = pageX - parentOffset.left;
     const Y = pageY - parentOffset.top;
 
     path.push(['M', X, Y]);
     paper.path(path).attr({ stroke: selectedColor, 'stroke-width': STROKE_WIDTH });
-  };
+  }
 
   const onMove = function (pageX, pageY) {
     const parentOffset = $(this).parent().offset();
@@ -341,7 +339,7 @@ $(() => {
   };
 
   $('#canvas').bind('mousedown', function (e) {
-    onDown.call(this, e.pageX, e.pageY);
+    onDown(this, e.pageX, e.pageY);
   });
 
   /*
@@ -366,7 +364,7 @@ $(() => {
   $('#canvas').bind('touchstart', function (e) {
     e.preventDefault();
     const pt = eventToPoint(e);
-    onDown.call(this, pt.x, pt.y);
+    onDown(this, pt.x, pt.y);
   });
 
   $('#canvas').bind('touchmove', function (e) {
