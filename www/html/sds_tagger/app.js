@@ -44,6 +44,7 @@ let HealthyIdentified = true;
 
 // Stores filename of image currently being used
 let curImageUrl = '';
+let curName = '';
 
 // Width of path lines
 const STROKE_WIDTH = 2;
@@ -53,8 +54,8 @@ const OP_LIST_ID = 'opList';
 const ID_LIST_ID = 'idList';
 
 // Dimension of drawing canvas:
-const CANVAS_SIZE_X = 3456;
-const CANVAS_SIZE_Y = 5184;
+const CANVAS_SIZE_SHORT = 512;
+const CANVAS_SIZE_LONG = 768;
 
 // Default color options for marking:
 const DEFAULT_COLORS = [
@@ -824,27 +825,35 @@ function addItemToList(listId, id) {
 // Then sets the given image to be the background
 // Finally prevents dragging on the image, which
 // would otherwise cause issues in FireFox
+// TODO: We're not done with this
 function initRaphael(filename) {
-  if (typeof paper === 'undefined') {
-    paper = Raphael('canvas', 512, 768);
-  } else {
-    paper.clear();
+  if (typeof paper !== 'undefined') {
+    paper.remove();
   }
 
   // var imagePath = IMAGES_URL + filename;
   // alert(imagePath);
   const url = `${BASE_PATH}getImage.php?id=${curImageId}`;
   const img = new Image();
-  img.onload = () => {
+  const mCanvas = document.getElementById('canvas');
+  img.onload = (event) => {
     const {
       height,
       width,
-    } = img;
-    alert(height);
-    return [height, width];
+    } = event.currentTarget;
+    if (height === 5184) {
+      mCanvas.setAttribute('style', `width: ${CANVAS_SIZE_SHORT}px; height: ${CANVAS_SIZE_LONG}px;`);
+      paper = Raphael('canvas', CANVAS_SIZE_SHORT, CANVAS_SIZE_LONG);
+      paper.image(url, 0, 0, CANVAS_SIZE_SHORT, CANVAS_SIZE_LONG);
+    } else if (height === 3456) {
+      mCanvas.setAttribute('style', `width: ${CANVAS_SIZE_LONG}px; height: ${CANVAS_SIZE_SHORT}px;`);
+      paper = Raphael('canvas', CANVAS_SIZE_LONG, CANVAS_SIZE_SHORT);
+      paper.image(url, 0, 0, CANVAS_SIZE_LONG, CANVAS_SIZE_SHORT);
+    } else {
+      alert(`Unregular height of ${height}`);
+    }
   };
   img.src = url;
-  paper.image(url, 0, 0, 512, 768);
 
   $('img')
     .on('dragstart', (event) => {
