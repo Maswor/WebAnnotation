@@ -393,10 +393,6 @@ $(() => {
         y: e.changedTouches[0].pageY
       };
     }
-    return {
-      x: e.pageX,
-      y: e.pageY
-    };
   };
 
   $('#canvas')
@@ -426,14 +422,16 @@ $(() => {
     });
 
   $('#canvas')
-    .bind('touchstart', function(e) {
+    .bind('touchstart', function(event) {
+      let e = event as any as TouchEvent;
       e.preventDefault();
       const pt = eventToPoint(e);
       onDown(this, pt.x, pt.y);
     });
 
   $('#canvas')
-    .bind('touchmove', function(e) {
+    .bind('touchmove', function(event) {
+      let e = event as any as TouchEvent;
       e.preventDefault();
       const pt = eventToPoint(e);
       onMove(this, pt.x, pt.y);
