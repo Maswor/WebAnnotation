@@ -37,6 +37,7 @@
     }
 
     #table td {}
+
   </style>
 
   <script>
@@ -62,11 +63,12 @@
     var username;
 
     function get(name) {
-      if (name = (new RegExp('[?&]' + encodeURIComponent(name) + '=([^&]*)')).exec(location.search))
+      if (name = (new RegExp('[?&]' + encodeURIComponent(name) + '=([^&]*)'))
+        .exec(location.search))
         return decodeURIComponent(name[1]);
     }
 
-    $(function() {
+    $(function () {
 
       var author = get("author");
       if (!author) {
@@ -87,7 +89,7 @@
         contentType: 'application/json; charset=utf-8',
         dataType: 'json',
         async: true,
-        success: function(response) {
+        success: function (response) {
 
           for (var i = 0; i < response.length; i++) {
             diseases.push({
@@ -99,7 +101,7 @@
 
           getImagesForAuthor();
         },
-        error: function(msg) {
+        error: function (msg) {
           alert(msg);
         }
       });
@@ -107,7 +109,8 @@
     }
 
     function getImagesForAuthor() {
-      var markedId = $("#mark_id").val();
+      var markedId = $("#mark_id")
+        .val();
 
       var url = BASE_PATH + GET_DATA_ENDPOINT;
       var dataToSend = {
@@ -120,7 +123,7 @@
         contentType: 'application/json; charset=utf-8',
         dataType: 'json',
         async: true,
-        success: function(responses) {
+        success: function (responses) {
 
           for (var r = 0; r < responses.length; r++) {
             var response = responses[r];
@@ -131,7 +134,7 @@
           }
 
         },
-        error: function(msg) {
+        error: function (msg) {
           alert(JSON.stringify(msg));
         }
       });
@@ -161,20 +164,23 @@
       });
       var id = "canvas" + index;
       $("<div>", {
-        id: id,
-        width: 512,
-        height: 512
-      }).appendTo(tdMarked);
+          id: id,
+          width: 512,
+          height: 512
+        })
+        .appendTo(tdMarked);
       tdMarked.appendTo(tr);
 
       var btnTd = $("<td>");
       var link = $("<a>", {
-        href: "soybean-tagger.html?remark_id=" + originalId + "&author=" + username
-      }).appendTo(btnTd);
+          href: "soybean-tagger.html?remark_id=" + originalId + "&author=" + username
+        })
+        .appendTo(btnTd);
 
       $("<button>", {
-        text: "Re-mark this image"
-      }).appendTo(link);
+          text: "Re-mark this image"
+        })
+        .appendTo(link);
       btnTd.appendTo(tr);
 
       var inlineBtnTd = $("<td>");
@@ -182,7 +188,7 @@
         text: "Remark inline"
       });
 
-      inlineBtn.click(function() {
+      inlineBtn.click(function () {
         var trWrapper = $("<tr>", {
           //height: '1000px'
         });
@@ -214,7 +220,7 @@
 
         inlineBtn.html('Close re-mark window');
         inlineBtn.unbind('click');
-        inlineBtn.click(function() {
+        inlineBtn.click(function () {
           trWrapper.remove();
         });
       });
@@ -237,10 +243,11 @@
 
             for (var i = 0; i < pathsArray.length; i++) {
 
-              paper.path(pathsArray[i]).attr({
-                stroke: color,
-                'stroke-width': 2
-              });
+              paper.path(pathsArray[i])
+                .attr({
+                  stroke: color,
+                  'stroke-width': 2
+                });
             }
           }
         }
@@ -255,6 +262,7 @@
       }
       return diseases[diseases.length - 1].color;
     }
+
   </script>
 
   <title>Image Tagger</title>
@@ -264,7 +272,7 @@
   <div id='header'>
     <span id='siteTitle'>Image Tagger</span> &nbsp;&nbsp;&nbsp;
     <a href='instructions.html' target=new>Instructions</a> &nbsp;&nbsp;&nbsp;
-    <a href='soybean-tagger.html' target=new>Back to Main Site</a>
+    <a href='index.html' target=new>Back to Main Site</a>
 
     <span style='float: right;' id='usernameDisplay'></span>
   </div>

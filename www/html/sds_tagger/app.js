@@ -322,7 +322,7 @@ $(() => {
     paper.path(path)
       .attr({
         stroke: selectedColor,
-        'stroke-width': STROKE_WIDTH
+        'stroke-width': STROKE_WIDTH,
       });
   }
 
@@ -339,7 +339,7 @@ $(() => {
       paper.path(path)
         .attr({
           stroke: selectedColor,
-          'stroke-width': STROKE_WIDTH
+          'stroke-width': STROKE_WIDTH,
         });
     }
   }
