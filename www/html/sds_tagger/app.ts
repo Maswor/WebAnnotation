@@ -1,6 +1,7 @@
 // The Raphael drawing context
 let paper;
 
+
 /*
  Main data structure storing all data regarding drawn paths
  For each disease with a path, there will be a property with that disease ID
@@ -15,7 +16,7 @@ let paper;
         pathArr: Stores array of path coordinates (SVG style)
         so they can be included in output file
  */
-let paths : { [key : string] : any; } = {};
+let paths: { [key: string]: any; } = {};
 
 // Stores the array of path coordinates for the path currently being drawn
 let path = [];
@@ -126,9 +127,6 @@ $(() => {
         Cancel() {
           uploadDiseasesDialog.dialog('close');
         },
-      },
-      close() {
-
       },
     });
 
@@ -293,7 +291,7 @@ $(() => {
       }
 
       if ($('#idList li')
-        .length == 0) {
+        .length === 0) {
         addItemToList(ID_LIST_ID, 'Healthy');
         HealthyIdentified = true;
       }
@@ -319,7 +317,7 @@ $(() => {
     path.push(['M', X, Y]);
     paper.path(path)
       .attr({
-        stroke: selectedColor,
+        'stroke': selectedColor,
         'stroke-width': STROKE_WIDTH,
       });
   }
@@ -373,27 +371,27 @@ $(() => {
     }
     paths[selected].push({
       pathArr: path,
-      pathObj: obj
+      pathObj: obj,
     });
     path = [];
     pathStack.push(selected);
   };
 
-  const eventToPoint = function(e : TouchEvent) {
+  function eventToPoint(e: TouchEvent) {
     if (e.type === 'touchstart' || e.type === 'touchmove') {
       if (navigator.userAgent.toLowerCase()
         .indexOf('android') > -1) {
         return {
           x: e.changedTouches[0].pageX + window.scrollX,
-          y: e.changedTouches[0].pageY + window.scrollY
+          y: e.changedTouches[0].pageY + window.scrollY,
         };
       }
       return {
         x: e.changedTouches[0].pageX,
-        y: e.changedTouches[0].pageY
+        y: e.changedTouches[0].pageY,
       };
     }
-  };
+  }
 
   $('#canvas')
     .bind('mousedown', function(e) {
@@ -423,7 +421,7 @@ $(() => {
 
   $('#canvas')
     .bind('touchstart', function(event) {
-      let e = event as any as TouchEvent;
+      const e = event as any as TouchEvent;
       e.preventDefault();
       const pt = eventToPoint(e);
       onDown(this, pt.x, pt.y);
@@ -431,26 +429,24 @@ $(() => {
 
   $('#canvas')
     .bind('touchmove', function(event) {
-      let e = event as any as TouchEvent;
+      const e = event as any as TouchEvent;
       e.preventDefault();
       const pt = eventToPoint(e);
       onMove(this, pt.x, pt.y);
     });
 
   $('#canvas')
-    .bind('touchend', function(e) {
-      e.preventDefault();
+    .bind('touchend', function(event) {
+      event.preventDefault();
       onUp.call(this);
     });
-
 
   // Called when the 'Show only Selected Disease' checkbox changes
   // Either shows all paths, or hides those that aren't for the
   // selected disease
   $('#displayToggle')
     .change(() => {
-      const showAll = !($('#displayToggle')
-        .is(':checked'));
+      const showAll = !($('#displayToggle').prop('checked'));
       for (let key in paths) {
         const value = paths[key];
         if (showAll) {
