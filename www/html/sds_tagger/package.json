@@ -1,31 +1,26 @@
 {
-  "name": "soybean_tagger",
-  "version": "1.0.0",
-  "description": "Tagging soybean",
-  "main": "soybean-tagger.js",
-  "directories": {
-    "lib": "lib"
-  },
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "author": "Misc",
-  "license": "MIT",
-  "devDependencies": {
-    "babel-cli": "^6.26.0",
-    "babel-core": "^6.26.3",
-    "babel-loader": "^7.1.4",
-    "babel-preset-env": "^1.7.0",
-    "css-loader": "^0.28.11",
-    "eslint": "^4.19.1",
-    "eslint-config-airbnb-base": "^12.1.0",
-    "eslint-plugin-import": "^2.12.0",
-    "eslint-plugin-jsdoc": "^3.7.1",
-    "jquery": "^3.3.1",
-    "jsdoc": "^3.5.5",
-    "raphael": "^2.2.7",
-    "style-loader": "^0.21.0",
-    "webpack": "^4.12.0"
-  },
-  "dependencies": {}
+	"name": "soybean_tagger",
+	"version": "1.0.0",
+	"description": "Tagging soybean",
+	"main": "soybean-tagger.ts",
+	"directories": {
+		"lib": "lib"
+	},
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"author": "Misc",
+	"license": "MIT",
+	"devDependencies": {
+		"@types/jquery": "^3.3.4",
+		"@types/jqueryui": "^1.12.2",
+		"@types/raphael": "^2.1.30",
+		"source-map-loader": "^0.2.3",
+		"ts-loader": "^4.4.1",
+		"typescript": "^2.9.2",
+		"webpack": "^4.12.0",
+		"webpack-cli": "^3.0.8",
+		"webpack-dev-server": "^3.1.4"
+	},
+	"dependencies": {}
 }
