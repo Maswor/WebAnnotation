@@ -1,7 +1,6 @@
 // The Raphael drawing context
 let paper;
 
-
 /*
  Main data structure storing all data regarding drawn paths
  For each disease with a path, there will be a property with that disease ID
@@ -81,7 +80,6 @@ const GET_PREVIOUS_IMAGE_ENDPOINT = 'getPreviousImage.php';
 const GET_REMARK_IMAGE_ENDPOINT = 'getImageToReMark.php';
 // var IMAGES_URL = "https://baskar-group.me.iastate.edu/soybean_tagger_images";
 
-
 // //Will store all image names once a request to the above script is made
 // // to get the names
 // var imageFileNames = [];
@@ -95,7 +93,6 @@ let username;
 // Just stores a reference so it can be closed
 let loginDialog;
 
-
 // Does initialization stuff and sets dom element event handling
 // (trying to attach events before this is called may not work)
 $(() => {
@@ -105,93 +102,16 @@ $(() => {
 
   getDiseases();
 
-  // CANVAS_SIZE = $("#canvas").width();
-
-  // Sets the two lists to be sortable
-  // Basically allows their elements to be dragged around
-  // and placed in either list in any order
-  $('#idList, #opList')
-    .sortable({
-      connectWith: '.connectedSortable',
-    })
-    .disableSelection();
-
-  // Configures the popup that appears when 'Upload Disease Options' is clicked
-  var uploadDiseasesDialog = $('#uploadDiseasesModal')
-    .dialog({
-      autoOpen: false,
-      height: 400,
-      width: 400,
-      modal: true,
-      buttons: {
-        Cancel() {
-          uploadDiseasesDialog.dialog('close');
-        },
-      },
-    });
-
-  // Called when upload diseases is clicked, opens popup
-  $('#uploadDiseasesBtn')
-    .click(() => {
-      uploadDiseasesDialog.dialog('open');
-    });
-
-  // Called when user changes the input of the disease file upload
-  // For reference on working with file uploads:
-  // https://developer.mozilla.org/en-US/docs/Using_files_from_web_applications
-  $('#diseasesFile')
-    .change(() => {
-      const file_input = <HTMLInputElement>$('#diseasesFile').get(0);
-      const file = file_input.files[0];
-
-      // TODO is there any other way to determine file type?
-      // file.type returns ''
-      if (file.name.includes('.json')) {
-        $('#submitDiseasesBtn')
-          .prop('disabled', false);
-      } else {
-        $('#submitDiseasesBtn')
-          .prop('disabled', true);
-        alert('Must be a .json file');
-      }
-    });
-
-  $('#submitDiseasesBtn')
-    .click(() => {
-      const file_input = <HTMLInputElement>$('#diseasesFile').get(0);
-      const file = file_input.files[0];
-      uploadDiseasesDialog.dialog('close');
-
-      const reader = new FileReader();
-      reader.onload = onDiseaseFileReaderLoad;
-      reader.readAsText(file);
-    });
-
-  // Configures the Login popup that appears on page load
   loginDialog = $('#loginModal')
     .dialog({
       autoOpen: false,
       height: 400,
       width: 400,
       modal: true,
-      close() {
-
-      },
       closeOnEscape: false,
-      open(event, ui) {
-        $('.ui-dialog-titlebar-close')
-          .hide();
-      },
     });
 
-  const author = get('author');
-  if (author) {
-    username = author;
-    loggedInAs(author);
-  } else {
-    loginDialog.dialog('open');
-  }
-
+  loginDialog.dialog('open');
 
   // Callback for clicking 'Login'
   $('#loginBtn')
@@ -206,6 +126,18 @@ $(() => {
       loggedInAs(username);
     });
 
+  // CANVAS_SIZE = $("#canvas").width();
+
+  // Sets the two lists to be sortable
+  // Basically allows their elements to be dragged around
+  // and placed in either list in any order
+  $('#idList, #opList')
+    .sortable({
+      connectWith: '.connectedSortable',
+    })
+    .disableSelection();
+
+  // Configures the Login popup that appears on page load
   $('#backBtn')
     .click(() => {
       previousImage();
@@ -243,7 +175,6 @@ $(() => {
         },
       });
     });
-
 
   // Called when a list element is dropped into the 'Identified Diseases' list
   // Adjusts styling of dropped element, sets it to be selected (if it's not 'Healthy')
@@ -334,13 +265,13 @@ $(() => {
       path.push(['L', X, Y]);
       paper.path(path)
         .attr({
-          stroke: selectedColor,
+          'stroke': selectedColor,
           'stroke-width': STROKE_WIDTH,
         });
     }
   }
 
-  const onUp = function() {
+  function onUp() {
     if (selected === 'Healthy') {
       return;
     }
@@ -354,15 +285,15 @@ $(() => {
     if (fill) {
       obj = paper.path(path)
         .attr({
-          stroke: selectedColor,
+          'stroke': selectedColor,
           'stroke-width': STROKE_WIDTH,
-          fill: selectedColor
+          'fill': selectedColor,
         });
     } else {
       obj = paper.path(path)
         .attr({
-          stroke: selectedColor,
-          'stroke-width': STROKE_WIDTH
+          'stroke': selectedColor,
+          'stroke-width': STROKE_WIDTH,
         });
     }
 
@@ -375,7 +306,7 @@ $(() => {
     });
     path = [];
     pathStack.push(selected);
-  };
+  }
 
   function eventToPoint(e: TouchEvent) {
     if (e.type === 'touchstart' || e.type === 'touchmove') {
@@ -394,7 +325,8 @@ $(() => {
   }
 
   $('#canvas')
-    .bind('mousedown', function(e) {
+    .bind('mousedown', function(event) {
+      const e = event as any as MouseEvent;
       onDown(this, e.pageX, e.pageY);
     });
 
@@ -404,7 +336,8 @@ $(() => {
    and redraws it (removing last drawn path from scene)
   */
   $('#canvas')
-    .bind('mousemove', function(e) {
+    .bind('mousemove', function(event) {
+      const e = event as any as MouseEvent;
       onMove(this, e.pageX, e.pageY);
     });
 
@@ -447,24 +380,17 @@ $(() => {
   $('#displayToggle')
     .change(() => {
       const showAll = !($('#displayToggle').prop('checked'));
-      for (let key in paths) {
-        const value = paths[key];
-        if (showAll) {
-          for (var i = 0; i < value.length; i++) {
-            value[i].pathObj.show();
-          }
-        } else if (key !== selected) {
-          for (var i = 0; i < value.length; i++) {
-            value[i].pathObj.hide();
-          }
-        } else {
-          for (var i = 0; i < value.length; i++) {
-            value[i].pathObj.show();
+      for (const key in paths) {
+        if (paths.hasOwnProperty(key)) {
+          const value = paths[key];
+          if (key !== selected && !showAll) {
+            value.map((line) => line.pathObj.hide());
+          } else {
+            value.map((line) => line.pathObj.show());
           }
         }
       }
     });
-
 
   // Called when 'Fill selection' is toggled
   // Either adds or removes the fill for each path
@@ -472,27 +398,26 @@ $(() => {
   // on current value
   $('#fillSelection')
     .change(() => {
-      fill = $('#fillSelection')
-        .is(':checked');
-
-      for (let key in paths) {
-        const value = paths[key];
-        for (let i = 0; i < value.length; i++) {
-          if (fill) {
-            const color = value[i].pathObj.attr('stroke');
-            value[i].pathObj.attr('fill', color);
-          } else {
-            // TODO have an array of fills. should be empty if fill is unchecked
-            // if checked, add separate object for fill, with same path array
-            // as the unfilled-path
-            // Because unchecking fill after a path was drawn doesn't
-            // remove the fill from the output image
-            value[i].pathObj.attr('fill', '');
+      fill = $('#fillSelection').prop('checked');
+      for (const key in paths) {
+        if (paths.hasOwnProperty(key)) {
+          const value = paths[key];
+          for (const mPath of value) {
+            if (fill) {
+              const color = mPath.pathObj.attr('stroke');
+              mPath.pathObj.attr('fill', color);
+            } else {
+              // TODO have an array of fills. should be empty if fill is unchecked
+              // if checked, add separate object for fill, with same path array
+              // as the unfilled-path
+              // Because unchecking fill after a path was drawn doesn't
+              // remove the fill from the output image
+              mPath.pathObj.attr('fill', '');
+            }
           }
         }
       }
     });
-
 
   // Callback for 'Clear' button
   // Removes all data and resets paper
@@ -504,7 +429,6 @@ $(() => {
       initRaphael(curImageUrl);
     });
 
-
   // Callback for the 'Clear Selected Disease' button
   // Removes paths associated with that disease
   // and removes that data from the data structures
@@ -514,13 +438,12 @@ $(() => {
         return;
       }
       const selectedShapePaths = paths[selected];
-      for (let i = 0; i < selectedShapePaths.length; i++) {
-        selectedShapePaths[i].pathObj.remove();
+      for (const line of selectedShapePaths) {
+        line.pathObj.remove();
       }
       paths[selected] = [];
       clearFromPathStack();
     });
-
 
   // Callback for 'undo' button
   // Removes the last drawn path and associated data
@@ -534,7 +457,6 @@ $(() => {
         pathStack.splice(pathStack.length - 1, 1);
       }
     });
-
 
   // Callback for 'save' button
   // Converts the raphael drawing to a single image (raphael drawings are SVG's)
@@ -560,11 +482,11 @@ $(() => {
     });
 });
 
-function loggedInAs(username) {
+function loggedInAs(privateUserName) {
   const url = BASE_PATH + GET_PROGRESS_ENDPOINT;
 
   const dataToSend = {
-    author: username
+    author: privateUserName,
   };
   $.ajax({
     url,
@@ -573,29 +495,24 @@ function loggedInAs(username) {
     contentType: 'application/json; charset=utf-8',
     dataType: 'json',
     async: false,
+    // doesn't return from 'createAndDownloadJSON'
     success(response) {
       // {marked: int, total: int}
-      if (response.marked == 0) {
-        alert('Warning - your user has no results saved. If this is not your first time using the app, make sure you used the same username (refresh page to login again)');
+      if (response.marked === 0) {
+        alert('Warning: New User, if not, checked Username again');
       }
 
       $('<a>', {
-        href: `retriever.html?author=${username}`,
-        text: 'View marked images',
+        'href': `retriever.html?author=${privateUserName}`,
+        'text': 'View marked images',
         'margin-left': 3,
       })
         .appendTo('#topLinks');
 
       $('#usernameDisplay')
-        .text(`You are logged in as ${username} (${response.marked}/${response.total} images marked)`);
+        .text(`You are logged in as ${privateUserName} (${response.marked}/${response.total} images marked)`);
       loginDialog.dialog('close');
-
-      const remarkId = get('remark_id');
-      if (remarkId) {
-        getImageToReMark(remarkId);
-      } else {
-        nextImage();
-      }
+      nextImage();
     },
     error(msg) {
       alert(msg);
@@ -603,24 +520,17 @@ function loggedInAs(username) {
   });
 }
 
-function get(name) {
-  if (name = (new RegExp(`[?&]${encodeURIComponent(name)}=([^&]*)`))
-    .exec(location.search)) {
-    return decodeURIComponent(name[1]);
-  }
-}
-
 function upload() {
   const url = BASE_PATH + UPLOAD_ENDPOINT;
 
-  const paths = getPathsString();
+  const pPaths = getPathsString();
 
   const severities = getSeverities();
 
   const dataToSend = {
     image_id: `${curImageId}`,
     author: username,
-    paths,
+    paths: pPaths,
     severities,
     poor_quality: false,
   };
@@ -646,7 +556,6 @@ function upload() {
     },
   });
 }
-
 
 function updateProgress() {
   const url = BASE_PATH + GET_PROGRESS_ENDPOINT;
@@ -678,18 +587,15 @@ function getPathsString() {
       const key = this.id;
       console.log(key);
 
-      if (key === 'Healthy')
-      // Returning false just breaks from the each loop,
-      // doesn't return from 'createAndDownloadJSON'
-      {
+      if (key === 'Healthy') {
         return false;
       }
 
       const value = paths[key];
       if (value && value.length > 0) {
         contentObj[key] = [];
-        for (let i = 0; i < value.length; i++) {
-          contentObj[key].push(value[i].pathArr);
+        for (const select of value) {
+          contentObj[key].push(select.pathArr);
         }
       }
     });
@@ -721,7 +627,6 @@ function getSeverities() {
   return arr;
 }
 
-
 // Called when 'Clear Selected Disease' is pressed
 // Removes instances of the selected disease from the pathStack (the 'undo' stack)
 function clearFromPathStack() {
@@ -749,7 +654,6 @@ function clearData() {
   selected = 'Healthy';
   $('.selected')
     .removeClass('selected');
-  HealthyIdentified = true;
 
   // Clear severities:
   $('#diseaseSeverities')
@@ -768,7 +672,6 @@ function removeDiseasesFromIdList() {
     });
   HealthyIdentified = true;
 }
-
 
 // Callback for when a disease option is clicked
 // Gives it a red border and sets
@@ -810,10 +713,9 @@ function addItemToList(listId, id) {
   clone.appendTo(`#${listId}`);
 }
 
-
 // Sets up the Raphael paper (drawing context)
-//	initializes it if it doesn't exist,
-//  clears it otherwise
+// initializes it if it doesn't exist,
+// clears it otherwise
 // Then sets the given image to be the background
 // Finally prevents dragging on the image, which
 // would otherwise cause issues in FireFox
@@ -867,29 +769,6 @@ function initRaphael(filename) {
     .css('webkitTouchCallout', 'none');
 }
 
-// Called once the uploaded diseases file has been uploaded and read
-function onDiseaseFileReaderLoad(event) {
-  try {
-    // Should be an array of JSON objects of the form: { id, name, color(optional) }
-    var obj = JSON.parse(event.target.result);
-    // alert(JSON.stringify(obj));
-  } catch (e) {
-    alert(`You have an error in your JSON. Error message: ${e.message}`);
-  }
-
-  try {
-    // Remove default options:
-    $('#opList')
-      .empty();
-
-    for (let i = 0; i < obj.length; i++) {
-      addOptionToOptions(obj[i], i);
-    }
-  } catch (e) {
-    alert(`Your json file doesn't match the expected format: ${e.message}`);
-  }
-}
-
 // Adds an option from a user's options JSON file to the 'All options' list
 // index is used just for default colors
 function addOptionToOptions(optionObj, index) {
@@ -930,35 +809,6 @@ function addOptionToOptions(optionObj, index) {
 
   li.appendTo('#opList');
 }
-
-
-// /*
-// Makes a request to a PHP script on the server that returns
-// the image names in the iamges folder
-// (javascript can't read directory listings)
-// */
-// function getImageNames() {
-// var url = BASE_PATH + PATH_OF_GET_IMAGES_SCRIPT;
-// $.ajax({
-// dataType: "json",
-// url: url,
-// success: function(results){
-
-// for(var i=0; i<results.length; i++){
-// imageFileNames.push(results[i]);
-// }
-
-// nextImage();
-// }
-// });
-// }
-
-
-/*
-	Increments the current image index,
-	and retrieves the next one for marking, if there are more.
-	Clears existing data from previous image, too
-*/
 function nextImage() {
   clearData();
 
@@ -1049,7 +899,7 @@ function previousImage() {
       curImageId = response.prev_image;
 
       if (curImageId === -1) {
-        alert('You have marked all images!');
+        alert('You have marked no images!');
         return;
       }
 
@@ -1068,89 +918,6 @@ function previousImage() {
       alert(JSON.stringify(msg));
     },
   });
-}
-
-
-/*
- Downloads the marked image.
- First fetches the dataURL from the canvas and sets it as src on a link tag,
- Then forces a click on the link to start the download
- In case the browser doesn't download the image, a download link is displayed on screen
- so users can click to manually get the image
-*/
-// function downloadImage() {
-
-// var dataURL = document.getElementById('outputCanvas').toDataURL("image/png");
-// forceDownload(dataURL, ".png");
-
-
-// var downloadImageLink = $("<a>", {
-// href: dataURL,
-// id: "imgLink",
-// download: "output-" + curImageUrl + ".png"
-// });
-
-// var newRow = $("<tr>", {
-// id: "nextBtnRow"
-// });
-
-// var nextBtnTd = $("<td>");
-// var nextBtn = $("<input>", {
-// type: "button",
-// id: "nextBtn",
-// value: "Next Image"
-// });
-// nextBtn.click(nextImage);
-// nextBtn.appendTo(nextBtnTd);
-// nextBtnTd.appendTo(newRow);
-
-// var linkTd = $("<td>", {
-// colspan: 2
-// });
-// downloadImageLink.append($("<span>If you're image did not download, click here</span>"));
-// downloadImageLink.appendTo(linkTd);
-// linkTd.appendTo(newRow);
-
-// $("#settingsTable").append(newRow);
-// }
-
-
-/*
- Goes over data in the paths object
- Grabs all data associated with each disease, formats it,
-  and puts it into another JSON object without
-  the pathObj info (just path points data)
- Encodes content into a format for downloading,
- then forces the download of the JSON file
-*/
-function createAndDownloadJSON() {
-  const contentObj = {};
-
-  $('#idList li')
-    .each(function() {
-      const key = this.id;
-
-      if (key === 'Healthy')
-      // Returning false just breaks from the each loop,
-      // doesn't return from 'createAndDownloadJSON'
-      {
-        return false;
-      }
-
-      const value = paths[key];
-      if (value.length > 0) {
-        contentObj[key] = [];
-        for (let i = 0; i < value.length; i++) {
-          contentObj[key].push(value[i].pathArr);
-        }
-      }
-    });
-
-  const content = JSON.stringify(contentObj);
-
-  const dataUrl = `data:text/plain;charset=utf-8,${encodeURIComponent(content)}`;
-  const extension = '.json';
-  forceDownload(dataUrl, extension);
 }
 
 function addToSeverities(liItem) {
@@ -1209,23 +976,4 @@ function removeFromSeverities(liItem) {
 
   $(wrapperId)
     .remove();
-}
-
-/*
-	When the user presses 'Save', a text file and image file
-	should be downloaded. This function forces the given dataUrl to
-	be downloaded, so that the user doesn't have to click 2 download buttons
-*/
-function forceDownload(dataUrl, extension) {
-  const a = document.createElement('a');
-  a.setAttribute('href', dataUrl);
-  a.setAttribute('download', `output-${curImageUrl}${extension}`);
-
-  if (document.createEvent) {
-    const event = document.createEvent('MouseEvents');
-    event.initEvent('click', true, true);
-    a.dispatchEvent(event);
-  } else {
-    a.click();
-  }
 }

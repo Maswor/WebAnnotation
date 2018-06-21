@@ -5,7 +5,7 @@ error_reporting(-1);
 
 require_once 'db.php';
 
-function getNextImage($author)
+function getPrevImage($author)
 {
   $conn = db_connect();
 
@@ -15,10 +15,10 @@ function getNextImage($author)
 
   $res = $stmt->get_result();
   $row = $res->fetch_assoc();
-  if ($row === null)
-    return "error";
-
-  $prev_orderIndex = $row['orderIndex'];
+  if ($row === null)  // no "current image" found, can happen when user has finished marking every image
+    $prev_orderIndex = 999999999;  // every image is less than 999999
+  else
+    $prev_orderIndex = $row['orderIndex'];
 	
 	
 	
@@ -30,7 +30,7 @@ function getNextImage($author)
   $res = $stmt->get_result();
   $row = $res->fetch_assoc();
   if ($row === null)
-	return array( "id" => -1, "name" => "error getting previous order index");;  // done
+	return array( "id" => -1, "name" => "error getting previous order index");  // done
   
   return array( "id" => $row['image_id'], "name" => $row['path']);
 }
@@ -39,7 +39,7 @@ try {
   if (!isset($_GET['author']))
     throw new Exception("Missing author");
 
-  $img = getNextImage($_GET['author']);
+  $img = getPrevImage($_GET['author']);
   $id = $img["id"];
   
   echo json_encode(array(
