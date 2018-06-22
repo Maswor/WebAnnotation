@@ -39,10 +39,10 @@ function putData($image_id, $author, $paths, $severities, $is_poor_quality)
 	  foreach ($severities as $kv) {
 		// get the {"1": 42} into $disease and $sev
 		// this is pretty jank
-		foreach ($kv as $disease => $sev) break;
-
+		foreach ($kv as $disease => $sev){
 		$stmt->bind_param("iii", $mark_id, $disease, $sev);
 		$stmt->execute();
+		}
 	  }
 
 	  $stmt->close();
@@ -71,10 +71,10 @@ function putData($image_id, $author, $paths, $severities, $is_poor_quality)
 	  foreach ($severities as $kv) {
 		// get the {"1": 42} into $disease and $sev
 		// this is pretty jank
-		foreach ($kv as $disease => $sev) break;
-
+		foreach ($kv as $disease => $sev){
 		$stmt->bind_param("iii", $mark_id, $disease, $sev);
 		$stmt->execute();
+		}
 	  }
 
 	  $stmt->close();

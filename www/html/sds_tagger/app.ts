@@ -560,7 +560,7 @@ function upload() {
 function updateProgress() {
   const url = BASE_PATH + GET_PROGRESS_ENDPOINT;
   const dataToSend = {
-    author: username
+    author: username,
   };
   $.ajax({
     url,
@@ -624,6 +624,7 @@ function getSeverities() {
       arr.push(obj);
     });
 
+  console.log(arr);
   return arr;
 }
 
@@ -689,7 +690,6 @@ function onSelect(li) {
     .change();
 }
 
-
 // Removes the element with the given id from it's current spot
 // Places a clone of that removed element (with same id)
 // into the list with the specified listID
@@ -697,11 +697,11 @@ function addItemToList(listId, id) {
   const clone = $(`#${id}`)
     .clone();
 
-  var classToAdd = 'ui-state-default';
+  let classToAdd = 'ui-state-default';
   let classToRemove = 'ui-state-highlight';
   if (listId === 'idList') {
     const temp = classToAdd;
-    var classToAdd = classToRemove;
+    classToAdd = classToRemove;
     classToRemove = temp;
   }
 
@@ -756,7 +756,7 @@ function initRaphael(filename) {
   $(document)
     .on('dragstart', (e) => {
       const nodeName = e.target.nodeName.toUpperCase();
-      if (nodeName == 'IMG' || nodeName == 'SVG' || nodeName == 'IMAGE') {
+      if (nodeName === 'IMG' || nodeName === 'SVG' || nodeName === 'IMAGE') {
         if (e.preventDefault) {
           e.preventDefault();
         }
@@ -814,7 +814,7 @@ function nextImage() {
 
   const url = BASE_PATH + GET_NEXT_IMAGE_ENDPOINT;
   const dataToSend = {
-    author: username
+    author: username,
   };
   $.ajax({
     url,
