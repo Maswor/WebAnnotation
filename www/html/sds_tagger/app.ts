@@ -200,28 +200,22 @@ class AnnoStore implements InterfaceAnnoStore {
   public clearData() {
     this.mPaths = {};
     this.mPathStack = [];
-
-    // Add Healthy to identified diseases and remove all other selections
-    addItemToList('idList', 'Healthy');
+    addItemToList('idList', 'Healthy'); // Add Healthy to identified diseases and remove all other selections
     removeDiseasesFromIdList();
     selected = 'Healthy';
-    $('.selected')
-      .removeClass('selected');
-
-    // Clear severities:
-    $('#diseaseSeverities')
-      .empty();
+    $('.selected').removeClass('selected');
+    $('#diseaseSeverities').empty(); // Clear severities
   }
 
   public undo() {
-    console.log(this.mPathStack);
-    if (paper.top && this.mPathStack.length > 0) {
-      paper.top.remove();
-      const lastId = this.mPathStack[this.mPathStack.length - 1];
-      const customPathObjArray = this.mPaths[lastId];
-      customPathObjArray.splice(customPathObjArray.length - 1, 1);
-      this.mPathStack.splice(this.mPathStack.length - 1, 1);
+    if (!paper.top || !this.mPathStack.length) {
+      return;
     }
+    paper.top.remove();
+    const lastId = this.mPathStack.splice(-1);
+    const customPathObjArray = this.mPaths[lastId[0]];
+    customPathObjArray.splice(-1);
+
   }
 
   public clearSelected() {
