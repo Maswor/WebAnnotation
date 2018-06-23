@@ -18,7 +18,7 @@ let paper;
 let paths: { [key: string]: any; } = {};
 
 // Stores the array of path coordinates for the path currently being drawn
-let path = [];
+// let path = [];
 
 /*
  Represents a stack of path ID's, where the top of the stack
@@ -100,12 +100,15 @@ interface InterfaceAnnoStore {
   mouseStat: MouseStat;
   downMouse(DomElem, pageX, pageY): void;
   moveMouse(DomElem, pageX, pageY): void;
+  upMouse(DomElem): void;
 }
 
 class AnnoStore implements InterfaceAnnoStore {
   private mMouseStat: MouseStat;
+  private path: Array<[string, number, number] | [string]>;
   constructor(private mResizeRatio: number = 1) {
     this.mMouseStat = MouseStat.Up;
+    this.path = [];
   }
   get resizeRatio() { return this.mResizeRatio; }
   set resizeRatio(ratio: number) { this.mResizeRatio = ratio; }
@@ -123,8 +126,8 @@ class AnnoStore implements InterfaceAnnoStore {
     const X = pageX - parentOffset.left;
     const Y = pageY - parentOffset.top;
 
-    path.push(['M', X, Y]);
-    paper.path(path)
+    this.path.push(['M', X, Y]);
+    paper.path(this.path)
       .attr({
         'stroke': selectedColor,
         'stroke-width': STROKE_WIDTH,
@@ -138,13 +141,50 @@ class AnnoStore implements InterfaceAnnoStore {
 
     if (this.mouseStat === MouseStat.Down) {
       paper.top.remove();
-      path.push(['L', X, Y]);
-      paper.path(path)
+      this.path.push(['L', X, Y]);
+      paper.path(this.path)
         .attr({
           'stroke': selectedColor,
           'stroke-width': STROKE_WIDTH,
         });
     }
+  }
+
+  public upMouse(DomElem) {
+    if (selected === 'Healthy') {
+      return;
+    }
+
+    this.path.push(['Z']);
+    paper.top.remove();
+
+    this.mouseStat = MouseStat.Up;
+
+    let obj;
+    if (fill) {
+      obj = paper.path(this.path)
+        .attr({
+          'stroke': selectedColor,
+          'stroke-width': STROKE_WIDTH,
+          'fill': selectedColor,
+        });
+    } else {
+      obj = paper.path(this.path)
+        .attr({
+          'stroke': selectedColor,
+          'stroke-width': STROKE_WIDTH,
+        });
+    }
+
+    if (!paths[selected]) {
+      paths[selected] = [];
+    }
+    paths[selected].push({
+      pathArr: this.path,
+      pathObj: obj,
+    });
+    this.path = [];
+    pathStack.push(selected);
   }
 }
 
@@ -283,66 +323,6 @@ $(() => {
       }
     });
 
-  /* Called when user clicks on Raphael drawing context (image)
-   * basically inits the path with the mouse coord,
-   * and sets the mouseDown flag so other callbacks know
-   * if button is clicked or not */
-
-  // function onMove(DomElem, pageX, pageY) {
-  //   const parentOffset = $(DomElem)
-  //     .parent()
-  //     .offset();
-  //   const X = pageX - parentOffset.left;
-  //   const Y = pageY - parentOffset.top;
-
-  //   if (mAnnoStore.mouseStat === MouseStat.Down) {
-  //     paper.top.remove();
-  //     path.push(['L', X, Y]);
-  //     paper.path(path)
-  //       .attr({
-  //         'stroke': selectedColor,
-  //         'stroke-width': STROKE_WIDTH,
-  //       });
-  //   }
-  // }
-
-  function onUp() {
-    if (selected === 'Healthy') {
-      return;
-    }
-
-    path.push(['Z']);
-    paper.top.remove();
-
-    mAnnoStore.mouseStat = MouseStat.Up;
-
-    let obj;
-    if (fill) {
-      obj = paper.path(path)
-        .attr({
-          'stroke': selectedColor,
-          'stroke-width': STROKE_WIDTH,
-          'fill': selectedColor,
-        });
-    } else {
-      obj = paper.path(path)
-        .attr({
-          'stroke': selectedColor,
-          'stroke-width': STROKE_WIDTH,
-        });
-    }
-
-    if (!paths[selected]) {
-      paths[selected] = [];
-    }
-    paths[selected].push({
-      pathArr: path,
-      pathObj: obj,
-    });
-    path = [];
-    pathStack.push(selected);
-  }
-
   function eventToPoint(e: TouchEvent) {
     if (e.type === 'touchstart' || e.type === 'touchmove') {
       if (navigator.userAgent.toLowerCase()
@@ -384,7 +364,7 @@ $(() => {
   // TODO - possibly change to document.mouseUp? in case user let's go slightly outside of canvas
   $('#canvas')
     .bind('mouseup', function(e) {
-      onUp.call(this);
+      mAnnoStore.upMouse(this);
     });
 
   $('#canvas')
@@ -406,7 +386,7 @@ $(() => {
   $('#canvas')
     .bind('touchend', function(event) {
       event.preventDefault();
-      onUp.call(this);
+      mAnnoStore.upMouse(this);
     });
 
   // Called when the 'Show only Selected Disease' checkbox changes
