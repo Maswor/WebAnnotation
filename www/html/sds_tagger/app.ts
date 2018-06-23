@@ -15,17 +15,13 @@ let paper;
         pathArr: Stores array of path coordinates (SVG style)
         so they can be included in output file
  */
-let paths: { [key: string]: any; } = {};
-
-// Stores the array of path coordinates for the path currently being drawn
-// let path = [];
 
 /*
  Represents a stack of path ID's, where the top of the stack
   was the id of the last disease with a path drawn
   Only used for the 'undo' feature
 */
-let pathStack = [];
+// let pathStack = [];
 
 // Flag indicating whether the area inside paths should be filled with color or not
 let fill = false;
@@ -101,20 +97,34 @@ interface InterfaceAnnoStore {
   downMouse(DomElem, pageX, pageY): void;
   moveMouse(DomElem, pageX, pageY): void;
   upMouse(DomElem): void;
+  clearData(): void;
+  undo(): void;
+  clearSelected(): void;
+}
+interface InterfacePath extends Array<[string, number, number] | [string]> { }
+interface InterfacePathData {
+  pathArr: InterfacePath;
+  pathObj: RaphaelElement;
 }
 
 class AnnoStore implements InterfaceAnnoStore {
   private mMouseStat: MouseStat;
-  private path: Array<[string, number, number] | [string]>;
+  private path: InterfacePath;
+  private mPaths: { [key: string]: InterfacePathData[]; };
+  private mPathStack: string[];
   constructor(private mResizeRatio: number = 1) {
     this.mMouseStat = MouseStat.Up;
     this.path = [];
+    this.mPaths = {}; // Stores the array of path coordinates for the path currently being drawn
+    this.mPathStack = []; // Stack of path ID's, top: id of last disease with a path drawn, used for 'undo'
   }
   get resizeRatio() { return this.mResizeRatio; }
   set resizeRatio(ratio: number) { this.mResizeRatio = ratio; }
 
   get mouseStat() { return this.mMouseStat; }
   set mouseStat(curStat: MouseStat) { this.mMouseStat = curStat; }
+
+  get paths() { return this.mPaths; }
 
   public downMouse(DomElem, pageX, pageY) {
     this.mouseStat = MouseStat.Down;
@@ -176,15 +186,68 @@ class AnnoStore implements InterfaceAnnoStore {
         });
     }
 
-    if (!paths[selected]) {
-      paths[selected] = [];
+    if (!this.mPaths[selected]) {
+      this.mPaths[selected] = [];
     }
-    paths[selected].push({
+    this.mPaths[selected].push({
       pathArr: this.path,
       pathObj: obj,
     });
     this.path = [];
-    pathStack.push(selected);
+    this.mPathStack.push(selected);
+  }
+
+  public clearData() {
+    this.mPaths = {};
+    this.mPathStack = [];
+
+    // Add Healthy to identified diseases and remove all other selections
+    addItemToList('idList', 'Healthy');
+    removeDiseasesFromIdList();
+    selected = 'Healthy';
+    $('.selected')
+      .removeClass('selected');
+
+    // Clear severities:
+    $('#diseaseSeverities')
+      .empty();
+  }
+
+  public undo() {
+    console.log(this.mPathStack);
+    if (paper.top && this.mPathStack.length > 0) {
+      paper.top.remove();
+      const lastId = this.mPathStack[this.mPathStack.length - 1];
+      const customPathObjArray = this.mPaths[lastId];
+      customPathObjArray.splice(customPathObjArray.length - 1, 1);
+      this.mPathStack.splice(this.mPathStack.length - 1, 1);
+    }
+  }
+
+  public clearSelected() {
+    if (selected === 'Healthy') {
+      return;
+    }
+    const selectedShapePaths = this.paths[selected];
+    for (const line of selectedShapePaths) {
+      line.pathObj.remove();
+    }
+    this.paths[selected] = [];
+    this.clearFromPathStack();
+  }
+
+  private clearFromPathStack() {
+    let restart = false;
+    for (let i = 0; i < this.mPathStack.length; i++) {
+      if (this.mPathStack[i] === selected) {
+        this.mPathStack.splice(i, 1);
+        restart = true;
+        break;
+      }
+    }
+    if (restart) {
+      this.clearFromPathStack();
+    }
   }
 }
 
@@ -395,9 +458,9 @@ $(() => {
   $('#displayToggle')
     .change(() => {
       const showAll = !($('#displayToggle').prop('checked'));
-      for (const key in paths) {
-        if (paths.hasOwnProperty(key)) {
-          const value = paths[key];
+      for (const key in mAnnoStore.paths) {
+        if (mAnnoStore.paths.hasOwnProperty(key)) {
+          const value = mAnnoStore.paths[key];
           if (key !== selected && !showAll) {
             value.map((line) => line.pathObj.hide());
           } else {
@@ -414,9 +477,9 @@ $(() => {
   $('#fillSelection')
     .change(() => {
       fill = $('#fillSelection').prop('checked');
-      for (const key in paths) {
-        if (paths.hasOwnProperty(key)) {
-          const value = paths[key];
+      for (const key in mAnnoStore.paths) {
+        if (mAnnoStore.paths.hasOwnProperty(key)) {
+          const value = mAnnoStore.paths[key];
           for (const mPath of value) {
             if (fill) {
               const color = mPath.pathObj.attr('stroke');
@@ -438,7 +501,7 @@ $(() => {
   // Removes all data and resets paper
   $('#clear')
     .click(() => {
-      clearData();
+      mAnnoStore.clearData();
 
       // paper.clear() removes image, so need to reset it:
       initRaphael(curImageUrl);
@@ -447,31 +510,11 @@ $(() => {
   // Callback for the 'Clear Selected Disease' button
   // Removes paths associated with that disease
   // and removes that data from the data structures
-  $('#clearSelected')
-    .click(() => {
-      if (selected === 'Healthy') {
-        return;
-      }
-      const selectedShapePaths = paths[selected];
-      for (const line of selectedShapePaths) {
-        line.pathObj.remove();
-      }
-      paths[selected] = [];
-      clearFromPathStack();
-    });
+  $('#clearSelected').click(() => mAnnoStore.clearSelected());
 
   // Callback for 'undo' button
   // Removes the last drawn path and associated data
-  $('#undo')
-    .click(() => {
-      if (paper.top && pathStack.length > 0) {
-        paper.top.remove();
-        const lastId = pathStack[pathStack.length - 1];
-        const customPathObjArray = paths[lastId];
-        customPathObjArray.splice(customPathObjArray.length - 1, 1);
-        pathStack.splice(pathStack.length - 1, 1);
-      }
-    });
+  $('#undo').click(() => mAnnoStore.undo());
 
   // Callback for 'save' button
   // Converts the raphael drawing to a single image (raphael drawings are SVG's)
@@ -495,82 +538,219 @@ $(() => {
 
       upload();
     });
+
+  function getPathsString() {
+    const contentObj = {};
+
+    $('#idList li')
+      .each(function() {
+        const key = this.id;
+        console.log(key);
+
+        if (key === 'Healthy') {
+          return false;
+        }
+
+        const value = mAnnoStore.paths[key];
+        if (value && value.length > 0) {
+          contentObj[key] = [];
+          for (const select of value) {
+            contentObj[key].push(select.pathArr);
+          }
+        }
+      });
+
+    const str = JSON.stringify(contentObj);
+    console.log(str);
+    return str;
+  }
+
+  function upload() {
+    const url = BASE_PATH + UPLOAD_ENDPOINT;
+
+    const pPaths = getPathsString();
+
+    const severities = getSeverities();
+
+    const dataToSend = {
+      image_id: `${curImageId}`,
+      author: username,
+      paths: pPaths,
+      severities,
+      poor_quality: false,
+    };
+
+    // console.log(JSON.stringify(dataToSend));
+    // alert(JSON.stringify(dataToSend));
+
+    $.ajax({
+      url,
+      type: 'POST',
+      data: JSON.stringify(dataToSend),
+      contentType: 'application/json; charset=utf-8',
+      dataType: 'json',
+      async: true,
+      success(response) {
+        console.log(`mark_id: ${response.mark_id}`);
+        nextImage();
+
+        updateProgress();
+      },
+      error(msg) {
+        alert(JSON.stringify(msg));
+      },
+    });
+  }
+
+  function nextImage() {
+    mAnnoStore.clearData();
+
+    const url = BASE_PATH + GET_NEXT_IMAGE_ENDPOINT;
+    const dataToSend = {
+      author: username,
+    };
+    $.ajax({
+      url,
+      type: 'GET',
+      data: dataToSend,
+      contentType: 'application/json; charset=utf-8',
+      dataType: 'json',
+      async: true,
+      success(response) {
+        console.log(response);
+        // alert(JSON.stringify(response));
+        curImageId = response.next_image;
+
+        if (curImageId === -1) {
+          alert('You have marked all images!');
+          return;
+        }
+
+        curImageUrl = response.image_url;
+
+        curName = response.image_name;
+
+        $('#filename')
+          .text(curName.substring(curName.indexOf('/')));
+
+        initRaphael(curImageUrl);
+      },
+      error(msg) {
+        alert(JSON.stringify(msg));
+      },
+    });
+  }
+
+  function getImageToReMark(remarkId) {
+    mAnnoStore.clearData();
+
+    const url = BASE_PATH + GET_REMARK_IMAGE_ENDPOINT;
+    const dataToSend = {
+      image_id: remarkId,
+    };
+    $.ajax({
+      url,
+      type: 'GET',
+      data: dataToSend,
+      contentType: 'application/json; charset=utf-8',
+      dataType: 'json',
+      async: true,
+      success(response) {
+        curImageId = response.image_id;
+
+        curImageUrl = response.image_url;
+
+        curName = response.image_name;
+
+        $('#filename')
+          .text(curName.substring(curName.indexOf('/')));
+
+        initRaphael(curImageUrl);
+      },
+      error(msg) {
+        alert(JSON.stringify(msg));
+      },
+    });
+  }
+
+  function previousImage() {
+    mAnnoStore.clearData();
+
+    const url = BASE_PATH + GET_PREVIOUS_IMAGE_ENDPOINT;
+    const dataToSend = {
+      author: username
+    };
+    $.ajax({
+      url,
+      type: 'GET',
+      data: dataToSend,
+      contentType: 'application/json; charset=utf-8',
+      dataType: 'json',
+      async: true,
+      success(response) {
+        // alert(JSON.stringify(response));
+        curImageId = response.prev_image;
+
+        if (curImageId === -1) {
+          alert('You have marked no images!');
+          return;
+        }
+
+        curImageUrl = response.image_url;
+
+        curName = response.image_name;
+
+        $('#filename')
+          .text(curName.substring(curName.indexOf('/')));
+
+        initRaphael(curImageUrl);
+
+        // $("#nextBtnRow").remove();
+      },
+      error(msg) {
+        alert(JSON.stringify(msg));
+      },
+    });
+  }
+
+  function loggedInAs(privateUserName) {
+    const url = BASE_PATH + GET_PROGRESS_ENDPOINT;
+
+    const dataToSend = {
+      author: privateUserName,
+    };
+    $.ajax({
+      url,
+      type: 'GET',
+      data: dataToSend,
+      contentType: 'application/json; charset=utf-8',
+      dataType: 'json',
+      async: false,
+      // doesn't return from 'createAndDownloadJSON'
+      success(response) {
+        // {marked: int, total: int}
+        if (response.marked === 0) {
+          alert('Warning: New User, if not, checked Username again');
+        }
+
+        $('<a>', {
+          'href': `retriever.html?author=${privateUserName}`,
+          'text': 'View marked images',
+          'margin-left': 3,
+        })
+          .appendTo('#topLinks');
+
+        $('#usernameDisplay')
+          .text(`You are logged in as ${privateUserName} (${response.marked}/${response.total} images marked)`);
+        loginDialog.dialog('close');
+        nextImage();
+      },
+      error(msg) {
+        alert(msg);
+      },
+    });
+  }
 });
-
-function loggedInAs(privateUserName) {
-  const url = BASE_PATH + GET_PROGRESS_ENDPOINT;
-
-  const dataToSend = {
-    author: privateUserName,
-  };
-  $.ajax({
-    url,
-    type: 'GET',
-    data: dataToSend,
-    contentType: 'application/json; charset=utf-8',
-    dataType: 'json',
-    async: false,
-    // doesn't return from 'createAndDownloadJSON'
-    success(response) {
-      // {marked: int, total: int}
-      if (response.marked === 0) {
-        alert('Warning: New User, if not, checked Username again');
-      }
-
-      $('<a>', {
-        'href': `retriever.html?author=${privateUserName}`,
-        'text': 'View marked images',
-        'margin-left': 3,
-      })
-        .appendTo('#topLinks');
-
-      $('#usernameDisplay')
-        .text(`You are logged in as ${privateUserName} (${response.marked}/${response.total} images marked)`);
-      loginDialog.dialog('close');
-      nextImage();
-    },
-    error(msg) {
-      alert(msg);
-    },
-  });
-}
-
-function upload() {
-  const url = BASE_PATH + UPLOAD_ENDPOINT;
-
-  const pPaths = getPathsString();
-
-  const severities = getSeverities();
-
-  const dataToSend = {
-    image_id: `${curImageId}`,
-    author: username,
-    paths: pPaths,
-    severities,
-    poor_quality: false,
-  };
-
-  // console.log(JSON.stringify(dataToSend));
-  // alert(JSON.stringify(dataToSend));
-
-  $.ajax({
-    url,
-    type: 'POST',
-    data: JSON.stringify(dataToSend),
-    contentType: 'application/json; charset=utf-8',
-    dataType: 'json',
-    async: true,
-    success(response) {
-      console.log(`mark_id: ${response.mark_id}`);
-      nextImage();
-
-      updateProgress();
-    },
-    error(msg) {
-      alert(JSON.stringify(msg));
-    },
-  });
-}
 
 function updateProgress() {
   const url = BASE_PATH + GET_PROGRESS_ENDPOINT;
@@ -594,31 +774,6 @@ function updateProgress() {
   });
 }
 
-function getPathsString() {
-  const contentObj = {};
-
-  $('#idList li')
-    .each(function() {
-      const key = this.id;
-      console.log(key);
-
-      if (key === 'Healthy') {
-        return false;
-      }
-
-      const value = paths[key];
-      if (value && value.length > 0) {
-        contentObj[key] = [];
-        for (const select of value) {
-          contentObj[key].push(select.pathArr);
-        }
-      }
-    });
-
-  const str = JSON.stringify(contentObj);
-  console.log(str);
-  return str;
-}
 
 function getSeverities() {
   const arr = [];
@@ -645,36 +800,8 @@ function getSeverities() {
 
 // Called when 'Clear Selected Disease' is pressed
 // Removes instances of the selected disease from the pathStack (the 'undo' stack)
-function clearFromPathStack() {
-  let restart = false;
-  for (let i = 0; i < pathStack.length; i++) {
-    if (pathStack[i] === selected) {
-      pathStack.splice(i, 1);
-      restart = true;
-      break;
-    }
-  }
-  if (restart) {
-    clearFromPathStack();
-  }
-}
 
 // Resets all selections, markings, and path data
-function clearData() {
-  paths = {};
-  pathStack = [];
-
-  // Add Healthy to identified diseases and remove all other selections
-  addItemToList('idList', 'Healthy');
-  removeDiseasesFromIdList();
-  selected = 'Healthy';
-  $('.selected')
-    .removeClass('selected');
-
-  // Clear severities:
-  $('#diseaseSeverities')
-    .empty();
-}
 
 // Removes every disease from the 'Identified diseases' list
 function removeDiseasesFromIdList() {
@@ -823,116 +950,6 @@ function addOptionToOptions(optionObj, index) {
   diseaseName.appendTo(li);
 
   li.appendTo('#opList');
-}
-function nextImage() {
-  clearData();
-
-  const url = BASE_PATH + GET_NEXT_IMAGE_ENDPOINT;
-  const dataToSend = {
-    author: username,
-  };
-  $.ajax({
-    url,
-    type: 'GET',
-    data: dataToSend,
-    contentType: 'application/json; charset=utf-8',
-    dataType: 'json',
-    async: true,
-    success(response) {
-      console.log(response);
-      // alert(JSON.stringify(response));
-      curImageId = response.next_image;
-
-      if (curImageId === -1) {
-        alert('You have marked all images!');
-        return;
-      }
-
-      curImageUrl = response.image_url;
-
-      curName = response.image_name;
-
-      $('#filename')
-        .text(curName.substring(curName.indexOf('/')));
-
-      initRaphael(curImageUrl);
-    },
-    error(msg) {
-      alert(JSON.stringify(msg));
-    },
-  });
-}
-
-function getImageToReMark(remark_id) {
-  clearData();
-
-  const url = BASE_PATH + GET_REMARK_IMAGE_ENDPOINT;
-  const dataToSend = {
-    image_id: remark_id
-  };
-  $.ajax({
-    url,
-    type: 'GET',
-    data: dataToSend,
-    contentType: 'application/json; charset=utf-8',
-    dataType: 'json',
-    async: true,
-    success(response) {
-      curImageId = response.image_id;
-
-      curImageUrl = response.image_url;
-
-      curName = response.image_name;
-
-      $('#filename')
-        .text(curName.substring(curName.indexOf('/')));
-
-      initRaphael(curImageUrl);
-    },
-    error(msg) {
-      alert(JSON.stringify(msg));
-    },
-  });
-}
-
-function previousImage() {
-  clearData();
-
-  const url = BASE_PATH + GET_PREVIOUS_IMAGE_ENDPOINT;
-  const dataToSend = {
-    author: username
-  };
-  $.ajax({
-    url,
-    type: 'GET',
-    data: dataToSend,
-    contentType: 'application/json; charset=utf-8',
-    dataType: 'json',
-    async: true,
-    success(response) {
-      // alert(JSON.stringify(response));
-      curImageId = response.prev_image;
-
-      if (curImageId === -1) {
-        alert('You have marked no images!');
-        return;
-      }
-
-      curImageUrl = response.image_url;
-
-      curName = response.image_name;
-
-      $('#filename')
-        .text(curName.substring(curName.indexOf('/')));
-
-      initRaphael(curImageUrl);
-
-      // $("#nextBtnRow").remove();
-    },
-    error(msg) {
-      alert(JSON.stringify(msg));
-    },
-  });
 }
 
 function addToSeverities(liItem) {
