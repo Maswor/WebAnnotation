@@ -31,7 +31,6 @@ let pathStack = [];
 let fill = false;
 
 // Flag indicating whether the user is holding down the left mouse button or not
-let mouseDown = false;
 
 // Stores the id of the currently selected disease
 let selected = 'Healthy';
@@ -95,6 +94,60 @@ let loginDialog;
 
 // Does initialization stuff and sets dom element event handling
 // (trying to attach events before this is called may not work)
+
+enum MouseStat { Down, Up }
+interface InterfaceAnnoStore {
+  mouseStat: MouseStat;
+  downMouse(DomElem, pageX, pageY): void;
+  moveMouse(DomElem, pageX, pageY): void;
+}
+
+class AnnoStore implements InterfaceAnnoStore {
+  private mMouseStat: MouseStat;
+  constructor(private mResizeRatio: number = 1) {
+    this.mMouseStat = MouseStat.Up;
+  }
+  get resizeRatio() { return this.mResizeRatio; }
+  set resizeRatio(ratio: number) { this.mResizeRatio = ratio; }
+
+  get mouseStat() { return this.mMouseStat; }
+  set mouseStat(curStat: MouseStat) { this.mMouseStat = curStat; }
+
+  public downMouse(DomElem, pageX, pageY) {
+    this.mouseStat = MouseStat.Down;
+    if (selected === 'Healthy') {
+      return;
+    }
+    this.mouseStat = MouseStat.Down;
+    const parentOffset = $(DomElem).parent().offset();
+    const X = pageX - parentOffset.left;
+    const Y = pageY - parentOffset.top;
+
+    path.push(['M', X, Y]);
+    paper.path(path)
+      .attr({
+        'stroke': selectedColor,
+        'stroke-width': STROKE_WIDTH,
+      });
+  }
+
+  public moveMouse(DomElem, pageX, pageY) {
+    const parentOffset = $(DomElem).parent().offset();
+    const X = pageX - parentOffset.left;
+    const Y = pageY - parentOffset.top;
+
+    if (this.mouseStat === MouseStat.Down) {
+      paper.top.remove();
+      path.push(['L', X, Y]);
+      paper.path(path)
+        .attr({
+          'stroke': selectedColor,
+          'stroke-width': STROKE_WIDTH,
+        });
+    }
+  }
+}
+
 $(() => {
   // Begins by loading image filepaths from server
   // Once loaded, loads first image and initializes drawing context
@@ -125,6 +178,8 @@ $(() => {
 
       loggedInAs(username);
     });
+
+  const mAnnoStore = new AnnoStore(6.75);
 
   // CANVAS_SIZE = $("#canvas").width();
 
@@ -232,44 +287,24 @@ $(() => {
    * basically inits the path with the mouse coord,
    * and sets the mouseDown flag so other callbacks know
    * if button is clicked or not */
-  function onDown(DomElem, pageX, pageY) {
-    if (selected === 'Healthy') {
-      return;
-    }
 
-    mouseDown = true;
+  // function onMove(DomElem, pageX, pageY) {
+  //   const parentOffset = $(DomElem)
+  //     .parent()
+  //     .offset();
+  //   const X = pageX - parentOffset.left;
+  //   const Y = pageY - parentOffset.top;
 
-    const parentOffset = $(DomElem)
-      .parent()
-      .offset();
-    const X = pageX - parentOffset.left;
-    const Y = pageY - parentOffset.top;
-
-    path.push(['M', X, Y]);
-    paper.path(path)
-      .attr({
-        'stroke': selectedColor,
-        'stroke-width': STROKE_WIDTH,
-      });
-  }
-
-  function onMove(DomElem, pageX, pageY) {
-    const parentOffset = $(DomElem)
-      .parent()
-      .offset();
-    const X = pageX - parentOffset.left;
-    const Y = pageY - parentOffset.top;
-
-    if (mouseDown) {
-      paper.top.remove();
-      path.push(['L', X, Y]);
-      paper.path(path)
-        .attr({
-          'stroke': selectedColor,
-          'stroke-width': STROKE_WIDTH,
-        });
-    }
-  }
+  //   if (mAnnoStore.mouseStat === MouseStat.Down) {
+  //     paper.top.remove();
+  //     path.push(['L', X, Y]);
+  //     paper.path(path)
+  //       .attr({
+  //         'stroke': selectedColor,
+  //         'stroke-width': STROKE_WIDTH,
+  //       });
+  //   }
+  // }
 
   function onUp() {
     if (selected === 'Healthy') {
@@ -279,7 +314,7 @@ $(() => {
     path.push(['Z']);
     paper.top.remove();
 
-    mouseDown = false;
+    mAnnoStore.mouseStat = MouseStat.Up;
 
     let obj;
     if (fill) {
@@ -327,7 +362,7 @@ $(() => {
   $('#canvas')
     .bind('mousedown', function(event) {
       const e = event as any as MouseEvent;
-      onDown(this, e.pageX, e.pageY);
+      mAnnoStore.downMouse(this, e.pageX, e.pageY);
     });
 
   /*
@@ -338,7 +373,7 @@ $(() => {
   $('#canvas')
     .bind('mousemove', function(event) {
       const e = event as any as MouseEvent;
-      onMove(this, e.pageX, e.pageY);
+      mAnnoStore.moveMouse(this, e.pageX, e.pageY);
     });
 
   /*
@@ -357,7 +392,7 @@ $(() => {
       const e = event as any as TouchEvent;
       e.preventDefault();
       const pt = eventToPoint(e);
-      onDown(this, pt.x, pt.y);
+      mAnnoStore.downMouse(this, pt.x, pt.y);
     });
 
   $('#canvas')
@@ -365,7 +400,7 @@ $(() => {
       const e = event as any as TouchEvent;
       e.preventDefault();
       const pt = eventToPoint(e);
-      onMove(this, pt.x, pt.y);
+      mAnnoStore.moveMouse(this, pt.x, pt.y);
     });
 
   $('#canvas')
