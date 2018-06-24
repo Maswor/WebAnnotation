@@ -127,22 +127,17 @@ class AnnoStore implements InterfaceAnnoStore {
   get paths() { return this.mPaths; }
 
   public downMouse(DomElem, pageX, pageY) {
-    if (selected === 'Healthy') {
+    if (selected === 'Healthy' || this.mouseStat === MouseStat.Down) {
       return;
-    }
-    if (this.mouseStat !== MouseStat.Down) {
+    } else {
       this.mouseStat = MouseStat.Down;
       const parentOffset = $(DomElem).parent().offset();
       const X = pageX - parentOffset.left;
       const Y = pageY - parentOffset.top;
       this.path.push(['M', X, Y]);
-    } else {
-      this.path.push(['Z']);
-      this.mouseStat = MouseStat.Up;
     }
     paper.path(this.path).attr({
-      'stroke': selectedColor,
-      'stroke-width': STROKE_WIDTH,
+      'stroke': selectedColor, 'stroke-width': STROKE_WIDTH,
     });
   }
 
@@ -155,34 +150,23 @@ class AnnoStore implements InterfaceAnnoStore {
     paper.top.remove();
     this.path.push(['L', X, Y]);
     paper.path(this.path).attr({
-      'stroke': selectedColor,
-      'stroke-width': STROKE_WIDTH,
+      'stroke': selectedColor, 'stroke-width': STROKE_WIDTH,
     });
   }
 
   public upMouse(DomElem) {
-    // if (selected === 'Healthy') {
-    //   return;
-    // }
-
     if (this.mouseStat !== MouseStat.Down) { return; }
-
     this.path.push(['Z']);
     paper.top.remove();
-
     this.mouseStat = MouseStat.Up;
-
     let obj;
     if (fill) {
       obj = paper.path(this.path).attr({
-        'stroke': selectedColor,
-        'stroke-width': STROKE_WIDTH,
-        'fill': selectedColor,
+        'stroke': selectedColor, 'stroke-width': STROKE_WIDTH, 'fill': selectedColor,
       });
     } else {
       obj = paper.path(this.path).attr({
-        'stroke': selectedColor,
-        'stroke-width': STROKE_WIDTH,
+        'stroke': selectedColor, 'stroke-width': STROKE_WIDTH,
       });
     }
 
@@ -190,8 +174,7 @@ class AnnoStore implements InterfaceAnnoStore {
       this.mPaths[selected] = [];
     }
     this.mPaths[selected].push({
-      pathArr: this.path,
-      pathObj: obj,
+      pathArr: this.path, pathObj: obj,
     });
     this.path = [];
     this.mPathStack.push(selected);
