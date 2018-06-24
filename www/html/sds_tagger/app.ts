@@ -1,5 +1,5 @@
 // The Raphael drawing context
-let paper;
+let paper: RaphaelPaper;
 
 /*
  Main data structure storing all data regarding drawn paths
@@ -101,7 +101,7 @@ interface InterfaceAnnoStore {
   undo(): void;
   clearSelected(): void;
 }
-interface InterfacePath extends Array<[string, number, number] | [string]> { }
+type InterfacePath = [number, number, number, number];
 interface InterfacePathData {
   pathArr: InterfacePath;
   pathObj: RaphaelElement;
@@ -112,9 +112,11 @@ class AnnoStore implements InterfaceAnnoStore {
   private path: InterfacePath;
   private mPaths: { [key: string]: InterfacePathData[]; };
   private mPathStack: string[];
+  private mRect: RaphaelElement;
   constructor(private mResizeRatio: number = 1) {
     this.mMouseStat = MouseStat.Up;
-    this.path = [];
+    this.path = null;
+    this.mRect = null;
     this.mPaths = {}; // Stores the array of path coordinates for the path currently being drawn
     this.mPathStack = []; // Stack of path ID's, top: id of last disease with a path drawn, used for 'undo'
   }
@@ -134,9 +136,9 @@ class AnnoStore implements InterfaceAnnoStore {
       const parentOffset = $(DomElem).parent().offset();
       const X = pageX - parentOffset.left;
       const Y = pageY - parentOffset.top;
-      this.path.push(['M', X, Y]);
+      this.path = [X, Y, 0, 0];
     }
-    paper.path(this.path).attr({
+    this.mRect = paper.rect(this.path[0], this.path[1], this.path[2], this.path[3]).attr({
       'stroke': selectedColor, 'stroke-width': STROKE_WIDTH,
     });
   }
@@ -147,25 +149,42 @@ class AnnoStore implements InterfaceAnnoStore {
     const Y = pageY - parentOffset.top;
 
     if (this.mouseStat !== MouseStat.Down) { return; }
-    paper.top.remove();
-    this.path.push(['L', X, Y]);
-    paper.path(this.path).attr({
+    const [width, height] = [X - this.path[0], Y - this.path[1]];
+    this.path.splice(2, 2, width, height);
+    this.mRect.remove();
+    let CornerX;
+    let CornerY;
+    if (width >= 0 && height >= 0) {
+      CornerX = this.path[0];
+      CornerY = this.path[1];
+    } else if (width >= 0 && height < 0) {
+      CornerX = this.path[0];
+      CornerY = this.path[1] + height;
+    } else if (width < 0 && height < 0) {
+      CornerX = this.path[0] + width;
+      CornerY = this.path[1] + height;
+    } else {
+      CornerX = this.path[0] + width;
+      CornerY = this.path[1];
+    }
+    this.mRect = paper.rect(CornerX, CornerY, Math.abs(width), Math.abs(height)).attr({
       'stroke': selectedColor, 'stroke-width': STROKE_WIDTH,
     });
+
   }
 
   public upMouse(DomElem) {
     if (this.mouseStat !== MouseStat.Down) { return; }
-    this.path.push(['Z']);
-    paper.top.remove();
+    // this.path.push(['Z']);
+    // paper.top.remove();
     this.mouseStat = MouseStat.Up;
-    let obj;
+    // let obj;
     if (fill) {
-      obj = paper.path(this.path).attr({
+      this.mRect.attr({
         'stroke': selectedColor, 'stroke-width': STROKE_WIDTH, 'fill': selectedColor,
       });
     } else {
-      obj = paper.path(this.path).attr({
+      this.mRect.attr({
         'stroke': selectedColor, 'stroke-width': STROKE_WIDTH,
       });
     }
@@ -174,9 +193,10 @@ class AnnoStore implements InterfaceAnnoStore {
       this.mPaths[selected] = [];
     }
     this.mPaths[selected].push({
-      pathArr: this.path, pathObj: obj,
+      pathArr: this.path, pathObj: this.mRect,
     });
-    this.path = [];
+    this.path = null;
+    this.mRect = null;
     this.mPathStack.push(selected);
   }
 
