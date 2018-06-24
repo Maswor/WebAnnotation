@@ -127,21 +127,23 @@ class AnnoStore implements InterfaceAnnoStore {
   get paths() { return this.mPaths; }
 
   public downMouse(DomElem, pageX, pageY) {
-    this.mouseStat = MouseStat.Down;
     if (selected === 'Healthy') {
       return;
     }
-    this.mouseStat = MouseStat.Down;
-    const parentOffset = $(DomElem).parent().offset();
-    const X = pageX - parentOffset.left;
-    const Y = pageY - parentOffset.top;
-
-    this.path.push(['M', X, Y]);
-    paper.path(this.path)
-      .attr({
-        'stroke': selectedColor,
-        'stroke-width': STROKE_WIDTH,
-      });
+    if (this.mouseStat !== MouseStat.Down) {
+      this.mouseStat = MouseStat.Down;
+      const parentOffset = $(DomElem).parent().offset();
+      const X = pageX - parentOffset.left;
+      const Y = pageY - parentOffset.top;
+      this.path.push(['M', X, Y]);
+    } else {
+      this.path.push(['Z']);
+      this.mouseStat = MouseStat.Up;
+    }
+    paper.path(this.path).attr({
+      'stroke': selectedColor,
+      'stroke-width': STROKE_WIDTH,
+    });
   }
 
   public moveMouse(DomElem, pageX, pageY) {
@@ -149,21 +151,21 @@ class AnnoStore implements InterfaceAnnoStore {
     const X = pageX - parentOffset.left;
     const Y = pageY - parentOffset.top;
 
-    if (this.mouseStat === MouseStat.Down) {
-      paper.top.remove();
-      this.path.push(['L', X, Y]);
-      paper.path(this.path)
-        .attr({
-          'stroke': selectedColor,
-          'stroke-width': STROKE_WIDTH,
-        });
-    }
+    if (this.mouseStat !== MouseStat.Down) { return; }
+    paper.top.remove();
+    this.path.push(['L', X, Y]);
+    paper.path(this.path).attr({
+      'stroke': selectedColor,
+      'stroke-width': STROKE_WIDTH,
+    });
   }
 
   public upMouse(DomElem) {
-    if (selected === 'Healthy') {
-      return;
-    }
+    // if (selected === 'Healthy') {
+    //   return;
+    // }
+
+    if (this.mouseStat !== MouseStat.Down) { return; }
 
     this.path.push(['Z']);
     paper.top.remove();
@@ -172,18 +174,16 @@ class AnnoStore implements InterfaceAnnoStore {
 
     let obj;
     if (fill) {
-      obj = paper.path(this.path)
-        .attr({
-          'stroke': selectedColor,
-          'stroke-width': STROKE_WIDTH,
-          'fill': selectedColor,
-        });
+      obj = paper.path(this.path).attr({
+        'stroke': selectedColor,
+        'stroke-width': STROKE_WIDTH,
+        'fill': selectedColor,
+      });
     } else {
-      obj = paper.path(this.path)
-        .attr({
-          'stroke': selectedColor,
-          'stroke-width': STROKE_WIDTH,
-        });
+      obj = paper.path(this.path).attr({
+        'stroke': selectedColor,
+        'stroke-width': STROKE_WIDTH,
+      });
     }
 
     if (!this.mPaths[selected]) {
@@ -222,26 +222,12 @@ class AnnoStore implements InterfaceAnnoStore {
     if (selected === 'Healthy') {
       return;
     }
-    const selectedShapePaths = this.paths[selected];
+    const selectedShapePaths = this.mPaths[selected];
     for (const line of selectedShapePaths) {
       line.pathObj.remove();
     }
-    this.paths[selected] = [];
-    this.clearFromPathStack();
-  }
-
-  private clearFromPathStack() {
-    let restart = false;
-    for (let i = 0; i < this.mPathStack.length; i++) {
-      if (this.mPathStack[i] === selected) {
-        this.mPathStack.splice(i, 1);
-        restart = true;
-        break;
-      }
-    }
-    if (restart) {
-      this.clearFromPathStack();
-    }
+    this.mPaths[selected] = [];
+    this.mPathStack = this.mPathStack.filter((path) => path !== selected);
   }
 }
 
