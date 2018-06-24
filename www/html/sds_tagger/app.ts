@@ -152,8 +152,8 @@ class AnnoStore implements InterfaceAnnoStore {
     const [width, height] = [X - this.path[0], Y - this.path[1]];
     this.path.splice(2, 2, width, height);
     this.mRect.remove();
-    let CornerX;
-    let CornerY;
+    let CornerX: number;
+    let CornerY: number;
     if (width >= 0 && height >= 0) {
       CornerX = this.path[0];
       CornerY = this.path[1];
