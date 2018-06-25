@@ -54,15 +54,15 @@ const CANVAS_SIZE_LONG = 768;
 
 // Default color options for marking:
 const DEFAULT_COLORS = [
-  '#800080',
-  '#00FFFF',
-  '#2222EE',
-  '#74BAEC',
-  '#FF00FF',
-  '#CE93D8',
-  '#FD8012',
-  '#9A5656',
-  '#57504B',
+  '#247BA0',
+  '#70C1B3',
+  '#B2DBBF',
+  '#F3FFBD',
+  '#FF1654',
+  '#A30F36',
+  '#5D081F',
+  '#2F0410',
+  '#180208',
 ];
 
 // If site structure is changed, this needs to be changed
@@ -115,8 +115,6 @@ class AnnoStore implements InterfaceAnnoStore {
   private mRect: RaphaelElement;
   constructor(private mResizeRatio: number = 1) {
     this.mMouseStat = MouseStat.Up;
-    this.path = null;
-    this.mRect = null;
     this.mPaths = {}; // Stores the array of path coordinates for the path currently being drawn
     this.mPathStack = []; // Stack of path ID's, top: id of last disease with a path drawn, used for 'undo'
   }
@@ -266,6 +264,8 @@ $(() => {
     });
 
   const mAnnoStore = new AnnoStore(6.75);
+  // Theming
+  $('button').addClass('ui-button ui-corner-all');
 
   // CANVAS_SIZE = $("#canvas").width();
 
@@ -482,13 +482,10 @@ $(() => {
 
   // Callback for 'Clear' button
   // Removes all data and resets paper
-  $('#clear')
-    .click(() => {
-      mAnnoStore.clearData();
-
-      // paper.clear() removes image, so need to reset it:
-      initRaphael(curImageUrl);
-    });
+  $('#clear').click(() => {
+    mAnnoStore.clearData();
+    initRaphael(curImageUrl);
+  });
 
   // Callback for the 'Clear Selected Disease' button
   // Removes paths associated with that disease
@@ -756,7 +753,6 @@ function updateProgress() {
     },
   });
 }
-
 
 function getSeverities() {
   const arr = [];

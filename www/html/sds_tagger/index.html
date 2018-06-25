@@ -8,7 +8,7 @@
 
     <!-- jQuery and jQuery UI -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
-    <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/themes/smoothness/jquery-ui.css">
+    <link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/themes/redmond/jquery-ui.min.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
 
     <!-- for draggable to work on mobile -->
@@ -47,14 +47,14 @@
                     <label><input type='checkbox' id='displayToggle'>Show Selected Disease Only</label>
                 </td>
                 <td>
-                    <input type='button' id='clear' value='Clear'>
+                    <button id='clear'>Clear</button>
                 </td>
                 <td>
-                    <input type='button' id='undo' value='Undo'>
+                    <button id='undo'> Undo</button>
                 </td>
 
                 <td>
-                    <label><input type='button' id='backBtn' value='Redo Previous Image'></label>
+                    <button id='backBtn'>Redo Previous Image</button>
                 </td>
                 <!--td>
 					<input type='button' id='uploadImagesBtn' value='Upload Image Set' disabled>
@@ -65,16 +65,16 @@
                     <label><input type='checkbox' id='fillSelection'>Fill selection</label>
                 </td>
                 <td>
-                    <input type='button' id='clearSelected' value='Clear Selected Disease'>
+                    <button id='clearSelected'> Clear Selected Disease </button>
                 </td>
                 <td>
-                    <input type='button' id='save' value='Save/Next Image'>
+                    <button id='save '> Save/Next Image </button>
                 </td>
                 <td>
-                    <label><input type='button' id='poorQualityBtn' value='Mark as Poor Quality'></label>
+                    <button id='poorQualityBtn'> Mark as Poor Quality </button>
                 </td>
                 <!--td>
-					<input type='button' id='uploadDiseasesBtn' value='Upload Disease Options'>
+					<input type='button ' id='uploadDiseasesBtn ' value='Upload Disease Options '>
 				</td-->
             </tr>
         </table>
@@ -83,8 +83,7 @@
     <hr />
 
     <!-- If you change the width/height, make sure you change 
-		the canvas's dimensions too, and change 
-		CANVAS_SIZE in the js file -->
+		the canvas's dimensions too, and change CANVAS_SIZE in the js file -->
 
     <span id='filename'></span><br><br>
     <div id="wrapper">
