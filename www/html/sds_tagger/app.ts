@@ -109,14 +109,14 @@ interface InterfacePathData {
 
 class AnnoStore implements InterfaceAnnoStore {
   private mMouseStat: MouseStat;
-  private path: InterfacePath;
+  private path?: InterfacePath;
   private mPaths: { [key: string]: InterfacePathData[]; };
   private mPathStack: string[];
   private mRect: RaphaelElement;
   constructor(private mResizeRatio: number = 1) {
     this.mMouseStat = MouseStat.Up;
-    this.mPaths = {}; // Stores the array of path coordinates for the path currently being drawn
-    this.mPathStack = []; // Stack of path ID's, top: id of last disease with a path drawn, used for 'undo'
+    this.mPaths = {}; // Stores the array of drawn rectangle
+    this.mPathStack = []; // Stack of rectangle ID's, top: id of last disease with a path drawn, used for 'undo'
   }
   get resizeRatio() { return this.mResizeRatio; }
   set resizeRatio(ratio: number) { this.mResizeRatio = ratio; }
@@ -194,7 +194,7 @@ class AnnoStore implements InterfaceAnnoStore {
       pathArr: this.path, pathObj: this.mRect,
     });
     this.path = null;
-    this.mRect = null;
+    this.mRect.removeData();
     this.mPathStack.push(selected);
   }
 
@@ -500,24 +500,23 @@ $(() => {
   // Converts the raphael drawing to a single image (raphael drawings are SVG's)
   // Puts that image in a <canvas> element, so it's URI can be extracted
   // Then downloads image and JSON file containing output
-  $('#save')
-    .click(() => {
-      // var mycanvas = document.getElementById("outputCanvas");
-      // var mycontext = mycanvas.getContext('2d');
-      // var svg = paper.toSVG();
+  $('#save').click(() => {
+    // var mycanvas = document.getElementById("outputCanvas");
+    // var mycontext = mycanvas.getContext('2d');
+    // var svg = paper.toSVG();
 
-      // Takes an SVG image and renders it as an image in a canvas
-      // canvg(mycanvas, svg, { ignoreClear: true } );
+    // Takes an SVG image and renders it as an image in a canvas
+    // canvg(mycanvas, svg, { ignoreClear: true } );
 
-      // TODO - is it possible to hide the output canvas
+    // TODO - is it possible to hide the output canvas
 
-      // Run after 100 ms in case image isn't converted to other canvas instantly
-      // setTimeout(downloadImage, 100);
+    // Run after 100 ms in case image isn't converted to other canvas instantly
+    // setTimeout(downloadImage, 100);
 
-      // createAndDownloadJSON();
+    // createAndDownloadJSON();
 
-      upload();
-    });
+    upload();
+  });
 
   function getPathsString() {
     const contentObj = {};
