@@ -194,7 +194,7 @@ class AnnoStore implements InterfaceAnnoStore {
       pathArr: this.path, pathObj: this.mRect,
     });
     this.path = null;
-    this.mRect.remove();
+    this.mRect = null;
     this.mPathStack.push(selected);
   }
 
