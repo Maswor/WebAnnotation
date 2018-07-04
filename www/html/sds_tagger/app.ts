@@ -117,6 +117,7 @@ class AnnoStore implements InterfaceAnnoStore {
     this.mMouseStat = MouseStat.Up;
     this.mPaths = {}; // Stores the array of drawn rectangle
     this.mPathStack = []; // Stack of rectangle ID's, top: id of last disease with a path drawn, used for 'undo'
+    this.clearSelected = this.clearSelected.bind(this);
   }
   get resizeRatio() { return this.mResizeRatio; }
   set resizeRatio(ratio: number) { this.mResizeRatio = ratio; }
@@ -490,7 +491,7 @@ $(() => {
   // Callback for the 'Clear Selected Disease' button
   // Removes paths associated with that disease
   // and removes that data from the data structures
-  $('#clearSelected').click(() => mAnnoStore.clearSelected());
+  $('#clearSelected').click(mAnnoStore.clearSelected);
 
   // Callback for 'undo' button
   // Removes the last drawn path and associated data
