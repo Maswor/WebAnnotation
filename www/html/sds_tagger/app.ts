@@ -312,34 +312,30 @@ $(() => {
   // Called when a list element is dropped into the 'Identified Diseases' list
   // Adjusts styling of dropped element, sets it to be selected (if it's not 'Healthy')
   // If 'Healthy' is the one dropped, removes all other list elements and clears the scene
-  $('#idList')
-    .on('sortreceive', (event, ui) => {
-      $('.selected')
-        .removeClass('selected');
-      ui.item.addClass('ui-state-highlight');
-      ui.item.removeClass('ui-state-default');
+  $('#idList').on('sortreceive', (event, ui) => {
+    $('.selected').removeClass('selected');
+    ui.item.addClass('ui-state-highlight');
+    ui.item.removeClass('ui-state-default');
 
-      if (ui.item.attr('id') === 'Healthy') {
-        // Healthy was moved to Identified disease,
-        // so remove all other diseases from identified list
-        removeDiseasesFromIdList();
-        $('#clear')
-          .click();
-      } else {
-        ui.item.bind('click', () => {
-          onSelect(ui.item);
-        });
-        ui.item.trigger('click');
+    if (ui.item.attr('id') === 'Healthy') {
+      // Healthy was moved to Identified disease,
+      // so remove all other diseases from identified list
+      removeDiseasesFromIdList();
+      $('#clear').click();
+    } else {
+      ui.item.on('click', () => { onSelect(ui.item); });
+      ui.item.trigger('click');
+      console.log("fuck");
 
-        addToSeverities(ui.item);
+      addToSeverities(ui.item);
 
-        // Move 'Healthy' to other list if not already there
-        if (HealthyIdentified) {
-          addItemToList(OP_LIST_ID, 'Healthy');
-          HealthyIdentified = false;
-        }
+      // Move 'Healthy' to other list if not already there
+      if (HealthyIdentified) {
+        addItemToList(OP_LIST_ID, 'Healthy');
+        HealthyIdentified = false;
       }
-    });
+    }
+  });
 
   // Called when a list element is dropped into the 'All Options' list
   // Just changes styling, and will put 'Healthy' into identified if it's empty
