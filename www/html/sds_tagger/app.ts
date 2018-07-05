@@ -92,22 +92,13 @@ let loginDialog;
 // (trying to attach events before this is called may not work)
 
 enum MouseStat { Down, Up }
-interface InterfaceAnnoStore {
-  mouseStat: MouseStat;
-  downMouse(DomElem, pageX, pageY): void;
-  moveMouse(DomElem, pageX, pageY): void;
-  upMouse(DomElem): void;
-  clearData(): void;
-  undo(): void;
-  clearSelected(): void;
-}
 type InterfacePath = [number, number, number, number];
 interface InterfacePathData {
   pathArr: InterfacePath;
   pathObj: RaphaelElement;
 }
 
-class AnnoStore implements InterfaceAnnoStore {
+class AnnoStore {
   private mMouseStat: MouseStat;
   private path?: InterfacePath;
   private mPaths: { [key: string]: InterfacePathData[]; };
