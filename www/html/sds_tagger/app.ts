@@ -97,6 +97,11 @@ interface InterfacePathData {
   pathArr: InterfacePath;
   pathObj: RaphaelElement;
 }
+interface ICanvas {
+  width?: number;
+  height?: number;
+  resizeRatio: number;
+}
 
 class AnnoStore {
   private mMouseStat: MouseStat;
@@ -104,20 +109,23 @@ class AnnoStore {
   private mPaths: { [key: string]: InterfacePathData[]; };
   private mPathStack: string[];
   private mRect: RaphaelElement;
-  constructor(private mResizeRatio: number = 1) {
+  constructor(private mCanvasShape: ICanvas = { resizeRatio: 1 }) {
     this.mMouseStat = MouseStat.Up;
     this.mPaths = {}; // Stores the array of drawn rectangle
     this.mPathStack = []; // Stack of rectangle ID's, top: id of last disease with a path drawn, used for 'undo'
     this.clearSelected = this.clearSelected.bind(this);
   }
-  get resizeRatio() { return this.mResizeRatio; }
-  set resizeRatio(ratio: number) { this.mResizeRatio = ratio; }
-
+  get canvasShape() { return this.mCanvasShape; }
+  set canvasShape(shape: ICanvas) {
+    if (shape.resizeRatio < 0) { throw new Error('resizeRatio should be a positive number'); }
+    if (shape.width < 0 || shape.height < 0) { throw new Error('Canvas sizes should be posite'); }
+    this.mCanvasShape.width = shape.width;
+    this.mCanvasShape.height = shape.height;
+    this.mCanvasShape.resizeRatio = shape.resizeRatio;
+  }
   get mouseStat() { return this.mMouseStat; }
   set mouseStat(curStat: MouseStat) { this.mMouseStat = curStat; }
-
   get paths() { return this.mPaths; }
-
   public downMouse(DomElem, pageX, pageY) {
     if (selected === 'Healthy' || this.mouseStat === MouseStat.Down) {
       return;
@@ -139,6 +147,7 @@ class AnnoStore {
     const Y = pageY - parentOffset.top;
 
     if (this.mouseStat !== MouseStat.Down) { return; }
+    if (X < 0 || X > this.mCanvasShape.width || Y < 0 || Y > this.mCanvasShape.height) { return; }
     const [width, height] = [X - this.path[0], Y - this.path[1]];
     this.path.splice(2, 2, width, height);
     this.mRect.remove();
@@ -174,9 +183,7 @@ class AnnoStore {
         'stroke': selectedColor, 'stroke-width': STROKE_WIDTH, 'fill': selectedColor,
       });
     } else {
-      this.mRect.attr({
-        'stroke': selectedColor, 'stroke-width': STROKE_WIDTH,
-      });
+      this.mRect.attr({ 'stroke': selectedColor, 'stroke-width': STROKE_WIDTH });
     }
 
     if (!this.mPaths[selected]) {
@@ -255,7 +262,7 @@ $(() => {
       loggedInAs(username);
     });
 
-  const mAnnoStore = new AnnoStore(6.75);
+  const mAnnoStore = new AnnoStore();
   // Theming
   $('button').addClass('ui-button ui-corner-all');
 
@@ -323,9 +330,8 @@ $(() => {
       removeDiseasesFromIdList();
       $('#clear').click();
     } else {
-      ui.item.on('click', () => { onSelect(ui.item); });
+      ui.item.on('click touchstart', () => { onSelect(ui.item); }); // TODO: add listener for touch
       ui.item.trigger('click');
-      console.log("fuck");
 
       addToSeverities(ui.item);
 
@@ -404,24 +410,23 @@ $(() => {
   $('#canvas')
     .bind('touchstart', function(event) {
       const e = event as any as TouchEvent;
-      e.preventDefault();
+      // e.preventDefault();
       const pt = eventToPoint(e);
       mAnnoStore.downMouse(this, pt.x, pt.y);
     });
 
-  $('#canvas')
-    .bind('touchmove', function(event) {
-      const e = event as any as TouchEvent;
-      e.preventDefault();
-      const pt = eventToPoint(e);
-      mAnnoStore.moveMouse(this, pt.x, pt.y);
-    });
+  $('#canvas').on('touchmove', function(event) {
+    const e = event as any as TouchEvent;
+    const canvasElem = $('#canvas')[0];
+    e.preventDefault();
+    const pt = eventToPoint(e);
+    mAnnoStore.moveMouse(this, pt.x, pt.y);
+  });
 
-  $('#canvas')
-    .bind('touchend', function(event) {
-      event.preventDefault();
-      mAnnoStore.upMouse(this);
-    });
+  $('#canvas').on('touchend touchcancel', function(event) {
+    event.preventDefault();
+    mAnnoStore.upMouse(this);
+  });
 
   // Called when the 'Show only Selected Disease' checkbox changes
   // Either shows all paths, or hides those that aren't for the
@@ -644,9 +649,7 @@ $(() => {
     mAnnoStore.clearData();
 
     const url = BASE_PATH + GET_PREVIOUS_IMAGE_ENDPOINT;
-    const dataToSend = {
-      author: username
-    };
+    const dataToSend = { author: username };
     $.ajax({
       url,
       type: 'GET',
@@ -692,7 +695,7 @@ $(() => {
       data: dataToSend,
       contentType: 'application/json; charset=utf-8',
       dataType: 'json',
-      async: false,
+      async: true,
       // doesn't return from 'createAndDownloadJSON'
       success(response) {
         // {marked: int, total: int}
@@ -717,6 +720,61 @@ $(() => {
       },
     });
   }
+
+  // Sets up the Raphael paper (drawing context)
+  // initializes it if it doesn't exist,
+  // clears it otherwise
+  // Then sets the given image to be the background
+  // Finally prevents dragging on the image, which
+  // would otherwise cause issues in FireFox
+  // TODO: We're not done with this
+  function initRaphael(filename) {
+    if (typeof paper !== 'undefined') {
+      paper.remove();
+    }
+
+    // var imagePath = IMAGES_URL + filename;
+    // alert(imagePath);
+    const url = `${BASE_PATH}getImage.php?id=${curImageId}`;
+    const img = new Image();
+    const mCanvas = document.getElementById('canvas');
+    img.onload = () => {
+      const { height, width } = img;
+      if (width <= height) {
+        mCanvas.setAttribute('style', `width: ${CANVAS_SIZE_SHORT}px; height: ${CANVAS_SIZE_LONG}px;`);
+        paper = Raphael('canvas', CANVAS_SIZE_SHORT, CANVAS_SIZE_LONG);
+        paper.image(url, 0, 0, CANVAS_SIZE_SHORT, CANVAS_SIZE_LONG);
+        const resizeRatio = width / CANVAS_SIZE_SHORT;
+        mAnnoStore.canvasShape = { width: CANVAS_SIZE_SHORT, height: CANVAS_SIZE_LONG, resizeRatio };
+      } else {
+        mCanvas.setAttribute('style', `width: ${CANVAS_SIZE_LONG}px; height: ${CANVAS_SIZE_SHORT}px;`);
+        paper = Raphael('canvas', CANVAS_SIZE_LONG, CANVAS_SIZE_SHORT);
+        paper.image(url, 0, 0, CANVAS_SIZE_LONG, CANVAS_SIZE_SHORT);
+        const resizeRatio = height / CANVAS_SIZE_SHORT;
+        mAnnoStore.canvasShape = { width: CANVAS_SIZE_LONG, height: CANVAS_SIZE_SHORT, resizeRatio };
+      }
+    };
+    img.src = url;
+
+    $('img')
+      .on('dragstart', (event) => {
+        event.preventDefault();
+      });
+    $(document)
+      .on('dragstart', (e) => {
+        const nodeName = e.target.nodeName.toUpperCase();
+        if (nodeName === 'IMG' || nodeName === 'SVG' || nodeName === 'IMAGE') {
+          if (e.preventDefault) {
+            e.preventDefault();
+          }
+          return false;
+        }
+      });
+    $('#canvas')
+      .css('webkitTapHighlightColor', 'rgba(0,0,0,0)');
+    $('#canvas')
+      .css('webkitTouchCallout', 'none');
+  }
 });
 
 function updateProgress() {
@@ -730,7 +788,7 @@ function updateProgress() {
     data: dataToSend,
     contentType: 'application/json; charset=utf-8',
     dataType: 'json',
-    async: false,
+    async: true,
     success(response) {
       $('#usernameDisplay')
         .text(`You are logged in as ${username} (${response.marked}/${response.total} images marked)`);
@@ -819,62 +877,6 @@ function addItemToList(listId, id) {
   $(`#${id}`)
     .remove();
   clone.appendTo(`#${listId}`);
-}
-
-// Sets up the Raphael paper (drawing context)
-// initializes it if it doesn't exist,
-// clears it otherwise
-// Then sets the given image to be the background
-// Finally prevents dragging on the image, which
-// would otherwise cause issues in FireFox
-// TODO: We're not done with this
-function initRaphael(filename) {
-  if (typeof paper !== 'undefined') {
-    paper.remove();
-  }
-
-  // var imagePath = IMAGES_URL + filename;
-  // alert(imagePath);
-  const url = `${BASE_PATH}getImage.php?id=${curImageId}`;
-  const img = new Image();
-  const mCanvas = document.getElementById('canvas');
-  img.onload = () => {
-    const {
-      height,
-      width,
-    } = img;
-    if (height === 5184) {
-      mCanvas.setAttribute('style', `width: ${CANVAS_SIZE_SHORT}px; height: ${CANVAS_SIZE_LONG}px;`);
-      paper = Raphael('canvas', CANVAS_SIZE_SHORT, CANVAS_SIZE_LONG);
-      paper.image(url, 0, 0, CANVAS_SIZE_SHORT, CANVAS_SIZE_LONG);
-    } else if (height === 3456) {
-      mCanvas.setAttribute('style', `width: ${CANVAS_SIZE_LONG}px; height: ${CANVAS_SIZE_SHORT}px;`);
-      paper = Raphael('canvas', CANVAS_SIZE_LONG, CANVAS_SIZE_SHORT);
-      paper.image(url, 0, 0, CANVAS_SIZE_LONG, CANVAS_SIZE_SHORT);
-    } else {
-      alert(`Unregular height of ${height}`);
-    }
-  };
-  img.src = url;
-
-  $('img')
-    .on('dragstart', (event) => {
-      event.preventDefault();
-    });
-  $(document)
-    .on('dragstart', (e) => {
-      const nodeName = e.target.nodeName.toUpperCase();
-      if (nodeName === 'IMG' || nodeName === 'SVG' || nodeName === 'IMAGE') {
-        if (e.preventDefault) {
-          e.preventDefault();
-        }
-        return false;
-      }
-    });
-  $('#canvas')
-    .css('webkitTapHighlightColor', 'rgba(0,0,0,0)');
-  $('#canvas')
-    .css('webkitTouchCallout', 'none');
 }
 
 // Adds an option from a user's options JSON file to the 'All options' list
