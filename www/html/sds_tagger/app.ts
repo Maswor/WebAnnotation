@@ -54,15 +54,11 @@ const CANVAS_SIZE_LONG = 768;
 
 // Default color options for marking:
 const DEFAULT_COLORS = [
-  '#247BA0',
-  '#70C1B3',
-  '#B2DBBF',
-  '#F3FFBD',
-  '#FF1654',
-  '#A30F36',
-  '#5D081F',
-  '#2F0410',
-  '#180208',
+  '#725df1',
+  '#06d561',
+  '#f4e203',
+  '#f25b05',
+  '#f40704',
 ];
 
 // If site structure is changed, this needs to be changed
@@ -204,7 +200,6 @@ class AnnoStore {
     removeDiseasesFromIdList();
     selected = 'Healthy';
     $('.selected').removeClass('selected');
-    $('#diseaseSeverities').empty(); // Clear severities
   }
 
   public undo() {
@@ -333,8 +328,6 @@ $(() => {
       ui.item.on('click touchstart', () => { onSelect(ui.item); }); // TODO: add listener for touch
       ui.item.trigger('click');
 
-      addToSeverities(ui.item);
-
       // Move 'Healthy' to other list if not already there
       if (HealthyIdentified) {
         addItemToList(OP_LIST_ID, 'Healthy');
@@ -352,10 +345,6 @@ $(() => {
       ui.item.removeClass('selected');
       selected = 'Healthy';
 
-      if (ui.item.attr('id') !== 'Healthy') {
-        removeFromSeverities(ui.item);
-      }
-
       if ($('#idList li')
         .length === 0) {
         addItemToList(ID_LIST_ID, 'Healthy');
@@ -364,19 +353,9 @@ $(() => {
     });
 
   function eventToPoint(e: TouchEvent) {
-    if (e.type === 'touchstart' || e.type === 'touchmove') {
-      if (navigator.userAgent.toLowerCase()
-        .indexOf('android') > -1) {
-        return {
-          x: e.changedTouches[0].pageX + window.scrollX,
-          y: e.changedTouches[0].pageY + window.scrollY,
-        };
-      }
-      return {
-        x: e.changedTouches[0].pageX,
-        y: e.changedTouches[0].pageY,
-      };
-    }
+    return {
+      x: e.changedTouches[0].pageX, y: e.changedTouches[0].pageY,
+    };
   }
 
   $('#canvas')
@@ -542,13 +521,11 @@ $(() => {
 
     const pPaths = getPathsString();
 
-    const severities = getSeverities();
-
     const dataToSend = {
       image_id: `${curImageId}`,
       author: username,
       paths: pPaths,
-      severities,
+      severities: [],
       poor_quality: false,
     };
 
@@ -799,29 +776,6 @@ function updateProgress() {
   });
 }
 
-function getSeverities() {
-  const arr = [];
-
-  $('#diseaseSeverities div')
-    .each(function() {
-      const c = $(this)
-        .attr('class');
-      const id = c.substring(c.indexOf('_') + 1);
-
-      // var idStr = "" + id + "";
-      const obj = {};
-      const value = $(this)
-        .find(`#severity${id}`)
-        .val();
-      obj[id] = value;
-
-      arr.push(obj);
-    });
-
-  console.log(arr);
-  return arr;
-}
-
 // Called when 'Clear Selected Disease' is pressed
 // Removes instances of the selected disease from the pathStack (the 'undo' stack)
 
@@ -920,32 +874,6 @@ function addOptionToOptions(optionObj, index) {
   li.appendTo('#opList');
 }
 
-function addToSeverities(liItem) {
-  const id = liItem.attr('id');
-  const name = liItem.find('.diseaseName')
-    .text();
-
-  // alert("id: " + id + ", " + name );
-
-  const wrapper = $('<div>', {
-    class: `severityWrapper_${id}`,
-  });
-  const label = $('<label>')
-    .text(`${name}: `);
-  const input = $('<input>', {
-    type: 'text',
-    value: 0,
-    id: `severity${id}`,
-  })
-    .appendTo(label);
-
-  label.appendTo(wrapper);
-
-  $('#diseaseSeverities')
-    .append('<br>');
-  wrapper.appendTo('#diseaseSeverities');
-}
-
 function getDiseases() {
   const url = BASE_PATH + GET_DISEASES_ENDPOINT;
   $.ajax({
@@ -967,13 +895,4 @@ function getDiseases() {
       alert(msg);
     },
   });
-}
-
-function removeFromSeverities(liItem) {
-  const id = liItem.attr('id');
-
-  const wrapperId = `#severityWrapper${id}`;
-
-  $(wrapperId)
-    .remove();
 }

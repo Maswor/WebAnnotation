@@ -97,12 +97,6 @@
 
         <div style='float: right;' id='rightPanel'>
 
-            <div id='identified'>
-                Identified diseases:
-                <ul id="idList" class="connectedSortable">
-                    <li id='Healthy' class="ui-state-highlight">Healthy</li>
-                </ul>
-            </div>
 
             <div id='options'>
                 All options:
@@ -151,32 +145,27 @@
                     </li>
 
                 </ul>
-            </div>
-            <!-- Options div -->
 
-            <br>
-
-        </div>
-        <!-- Right panel div -->
-        <div style='float: right; margin-right: 10px'>
-            Disease Severities<br> (enter value between 0-100):
-            <div id='diseaseSeverities'>
-
+                <div id='identified'>
+                    Disease scores:
+                    <ul id="idList" class="connectedSortable">
+                        <li id='Healthy' class="ui-state-highlight">Healthy</li>
+                    </ul>
+                </div>
             </div>
 
         </div>
-    </div>
-    <!-- Wrapper div -->
+        <!-- Wrapper div -->
 
-    <!-- Login popup, appears on page load -->
-    <div id='loginModal' title='Login'>
-        <label>Username: <input type='text' id='username' ></label><br><br>
-        <input type='button' id='loginBtn' value='Login'>
-        <br><br>
-        <p>
-            Your progress will be tracked through this username. If you haven't logged in before, an account will be created for you with the username you enter. If you plan to take a break from image tagging and resume later, it is important you remember this username and use the same one.
-        </p>
-    </div>
+        <!-- Login popup, appears on page load -->
+        <div id='loginModal' title='Login'>
+            <label>Username: <input type='text' id='username' ></label><br><br>
+            <input type='button' id='loginBtn' value='Login'>
+            <br><br>
+            <p>
+                Your progress will be tracked through this username. If you haven't logged in before, an account will be created for you with the username you enter. If you plan to take a break from image tagging and resume later, it is important you remember this username and use the same one.
+            </p>
+        </div>
 
 </body>
 
