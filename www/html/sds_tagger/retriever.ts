@@ -63,8 +63,9 @@ function getImagesForAuthor() {
     url, type: 'GET', data: dataToSend, contentType: 'application/json; charset=utf-8', dataType: 'json',
     async: true,
     success: (responses) => {
-      for (let r = 0; r < responses.length; r++) {
-        const response = responses[r];
+      const slice = responses.slice(-10);
+      for (let r = 0; r < slice.length; r++) {
+        const response = slice[r];
         console.log(response);
         addToTable(response, r);
       }
@@ -96,7 +97,7 @@ function addToTable(response, index) {
     const trWrapper = $('<tr>', {});
 
     const iframe = $('<iframe>', {
-      src: 'soybean-tagger.html?remark_id=' + originalId + '&author=' + username, width: '100%', height: '100%',
+      src: 'index.html?remark_id=' + originalId + '&author=' + username, width: '100%', height: '100%',
     });
     const iframeTd = $('<td>', { colspan: 3, height: '1000px' });
     iframe.appendTo(iframeTd);
