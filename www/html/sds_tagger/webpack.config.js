@@ -1,8 +1,11 @@
 module.exports = {
 	mode: 'production',
-	entry: './app.ts',
+	entry: {
+		app: './app.ts',
+		retriever: './retriever.ts'
+	},
 	output: {
-		filename: 'bundle.js',
+		filename: '[name].js',
 		path: `${__dirname}/build`,
 		publicPath: '/build/',
 	},

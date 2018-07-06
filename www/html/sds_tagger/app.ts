@@ -143,8 +143,12 @@ class AnnoStore {
     const Y = pageY - parentOffset.top;
 
     if (this.mouseStat !== MouseStat.Down) { return; }
+    // Hanle mouse/pencil going outside drawing area
     if (X < 0 || X > this.mCanvasShape.width || Y < 0 || Y > this.mCanvasShape.height) { return; }
     const [width, height] = [X - this.path[0], Y - this.path[1]];
+    const absWidth = Math.abs(width);
+    const absHeight = Math.abs(height);
+    if (absWidth < 10 || absHeight < 10) { return; } // Handle accident mouse/pencil touch
     this.path.splice(2, 2, width, height);
     this.mRect.remove();
     let CornerX: number;
@@ -162,7 +166,7 @@ class AnnoStore {
       CornerX = this.path[0] + width;
       CornerY = this.path[1];
     }
-    this.mRect = paper.rect(CornerX, CornerY, Math.abs(width), Math.abs(height)).attr({
+    this.mRect = paper.rect(CornerX, CornerY, absWidth, absHeight).attr({
       'stroke': selectedColor, 'stroke-width': STROKE_WIDTH,
     });
 
@@ -170,24 +174,15 @@ class AnnoStore {
 
   public upMouse(DomElem) {
     if (this.mouseStat !== MouseStat.Down) { return; }
-    // this.path.push(['Z']);
-    // paper.top.remove();
     this.mouseStat = MouseStat.Up;
-    // let obj;
     if (fill) {
-      this.mRect.attr({
-        'stroke': selectedColor, 'stroke-width': STROKE_WIDTH, 'fill': selectedColor,
-      });
+      this.mRect.attr({ 'stroke': selectedColor, 'stroke-width': STROKE_WIDTH, 'fill': selectedColor });
     } else {
       this.mRect.attr({ 'stroke': selectedColor, 'stroke-width': STROKE_WIDTH });
     }
 
-    if (!this.mPaths[selected]) {
-      this.mPaths[selected] = [];
-    }
-    this.mPaths[selected].push({
-      pathArr: this.path, pathObj: this.mRect,
-    });
+    if (!this.mPaths[selected]) { this.mPaths[selected] = []; }
+    this.mPaths[selected].push({ pathArr: this.path, pathObj: this.mRect });
     this.path = null;
     this.mRect = null;
     this.mPathStack.push(selected);
@@ -203,9 +198,7 @@ class AnnoStore {
   }
 
   public undo() {
-    if (!paper.top || !this.mPathStack.length) {
-      return;
-    }
+    if (!paper.top || !this.mPathStack.length) { return; }
     paper.top.remove();
     const lastId = this.mPathStack.splice(-1);
     const customPathObjArray = this.mPaths[lastId[0]];
@@ -214,15 +207,112 @@ class AnnoStore {
   }
 
   public clearSelected() {
-    if (selected === 'Healthy') {
-      return;
-    }
+    if (selected === 'Healthy') { return; }
     const selectedShapePaths = this.mPaths[selected];
-    for (const line of selectedShapePaths) {
-      line.pathObj.remove();
-    }
+    for (const line of selectedShapePaths) { line.pathObj.remove(); }
     this.mPaths[selected] = [];
     this.mPathStack = this.mPathStack.filter((path) => path !== selected);
+  }
+
+  public nextImage() {
+    this.clearData();
+
+    const url = BASE_PATH + GET_NEXT_IMAGE_ENDPOINT;
+    const dataToSend = {
+      author: username,
+    };
+    $.ajax({
+      url, type: 'GET', data: dataToSend, contentType: 'application/json; charset=utf-8', dataType: 'json', async: true,
+      success: (response) => {
+        console.log(response);
+        curImageId = response.next_image;
+        if (curImageId === -1) {
+          alert('You have marked all images!');
+          return;
+        }
+        curImageUrl = response.image_url;
+        curName = response.image_name;
+        $('#filename').text(curName.substring(curName.indexOf('/')));
+        this.initRaphael(curImageUrl);
+      },
+      error(msg) { alert(JSON.stringify(msg)); },
+    });
+  }
+
+  public initRaphael(filename) {
+    if (typeof paper !== 'undefined') { paper.remove(); }
+    const url = `${BASE_PATH}getImage.php?id=${curImageId}`;
+    const img = new Image();
+    const mCanvas = document.getElementById('canvas');
+    img.onload = () => {
+      const { height, width } = img;
+      if (width <= height) {
+        mCanvas.setAttribute('style', `width: ${CANVAS_SIZE_SHORT}px; height: ${CANVAS_SIZE_LONG}px;`);
+        paper = Raphael('canvas', CANVAS_SIZE_SHORT, CANVAS_SIZE_LONG);
+        paper.image(url, 0, 0, CANVAS_SIZE_SHORT, CANVAS_SIZE_LONG);
+        const resizeRatio = width / CANVAS_SIZE_SHORT;
+        this.canvasShape = { width: CANVAS_SIZE_SHORT, height: CANVAS_SIZE_LONG, resizeRatio };
+      } else {
+        mCanvas.setAttribute('style', `width: ${CANVAS_SIZE_LONG}px; height: ${CANVAS_SIZE_SHORT}px;`);
+        paper = Raphael('canvas', CANVAS_SIZE_LONG, CANVAS_SIZE_SHORT);
+        paper.image(url, 0, 0, CANVAS_SIZE_LONG, CANVAS_SIZE_SHORT);
+        const resizeRatio = height / CANVAS_SIZE_SHORT;
+        this.canvasShape = { width: CANVAS_SIZE_LONG, height: CANVAS_SIZE_SHORT, resizeRatio };
+      }
+    };
+    img.src = url;
+
+    $('img').on('dragstart', (event) => { event.preventDefault(); });
+    $(document).on('dragstart', (e) => {
+      const nodeName = e.target.nodeName.toUpperCase();
+      if (nodeName === 'IMG' || nodeName === 'SVG' || nodeName === 'IMAGE') {
+        if (e.preventDefault) { e.preventDefault(); }
+        return false;
+      }
+    });
+    $('#canvas').css('webkitTapHighlightColor', 'rgba(0,0,0,0)');
+    $('#canvas').css('webkitTouchCallout', 'none');
+  }
+
+  public upload() {
+    const url = BASE_PATH + UPLOAD_ENDPOINT;
+    const pPaths = this.getPathsString();
+    const dataToSend = {
+      image_id: `${curImageId}`, author: username, paths: pPaths, severities: [], poor_quality: false,
+    };
+    $.ajax({
+      url, type: 'POST', data: JSON.stringify(dataToSend), contentType: 'application/json; charset=utf-8',
+      dataType: 'json', async: true,
+      success: (response) => {
+        // console.log(`mark_id: ${response.mark_id}`); // TODO Log upload respond
+        this.nextImage();
+        updateProgress();
+      },
+      error(msg) {
+        alert(JSON.stringify(msg));
+      },
+    });
+  }
+
+  private getPathsString() {
+    const contentObj = {};
+
+    $('#idList li').each((index, elem) => {
+      const key = elem.id;
+      if (key === 'Healthy') { return false; }
+
+      const value = this.paths[key];
+      if (value && value.length > 0) {
+        contentObj[key] = [];
+        for (const select of value) {
+          contentObj[key].push(select.pathArr);
+        }
+      }
+    });
+
+    const str = JSON.stringify(contentObj);
+    // console.log(str); // TODO log path string
+    return str;
   }
 }
 
@@ -301,7 +391,7 @@ $(() => {
         dataType: 'json',
         async: true,
         success(response) {
-          nextImage();
+          mAnnoStore.nextImage();
 
           updateProgress();
         },
@@ -456,7 +546,7 @@ $(() => {
   // Removes all data and resets paper
   $('#clear').click(() => {
     mAnnoStore.clearData();
-    initRaphael(curImageUrl);
+    mAnnoStore.initRaphael(curImageUrl);
   });
 
   // Callback for the 'Clear Selected Disease' button
@@ -473,122 +563,8 @@ $(() => {
   // Puts that image in a <canvas> element, so it's URI can be extracted
   // Then downloads image and JSON file containing output
   $('#save').click(() => {
-    // var mycanvas = document.getElementById("outputCanvas");
-    // var mycontext = mycanvas.getContext('2d');
-    // var svg = paper.toSVG();
-
-    // Takes an SVG image and renders it as an image in a canvas
-    // canvg(mycanvas, svg, { ignoreClear: true } );
-
-    // TODO - is it possible to hide the output canvas
-
-    // Run after 100 ms in case image isn't converted to other canvas instantly
-    // setTimeout(downloadImage, 100);
-
-    // createAndDownloadJSON();
-
-    upload();
+    mAnnoStore.upload();
   });
-
-  function getPathsString() {
-    const contentObj = {};
-
-    $('#idList li')
-      .each(function() {
-        const key = this.id;
-        console.log(key);
-
-        if (key === 'Healthy') {
-          return false;
-        }
-
-        const value = mAnnoStore.paths[key];
-        if (value && value.length > 0) {
-          contentObj[key] = [];
-          for (const select of value) {
-            contentObj[key].push(select.pathArr);
-          }
-        }
-      });
-
-    const str = JSON.stringify(contentObj);
-    console.log(str);
-    return str;
-  }
-
-  function upload() {
-    const url = BASE_PATH + UPLOAD_ENDPOINT;
-
-    const pPaths = getPathsString();
-
-    const dataToSend = {
-      image_id: `${curImageId}`,
-      author: username,
-      paths: pPaths,
-      severities: [],
-      poor_quality: false,
-    };
-
-    // console.log(JSON.stringify(dataToSend));
-    // alert(JSON.stringify(dataToSend));
-
-    $.ajax({
-      url,
-      type: 'POST',
-      data: JSON.stringify(dataToSend),
-      contentType: 'application/json; charset=utf-8',
-      dataType: 'json',
-      async: true,
-      success(response) {
-        console.log(`mark_id: ${response.mark_id}`);
-        nextImage();
-
-        updateProgress();
-      },
-      error(msg) {
-        alert(JSON.stringify(msg));
-      },
-    });
-  }
-
-  function nextImage() {
-    mAnnoStore.clearData();
-
-    const url = BASE_PATH + GET_NEXT_IMAGE_ENDPOINT;
-    const dataToSend = {
-      author: username,
-    };
-    $.ajax({
-      url,
-      type: 'GET',
-      data: dataToSend,
-      contentType: 'application/json; charset=utf-8',
-      dataType: 'json',
-      async: true,
-      success(response) {
-        console.log(response);
-        // alert(JSON.stringify(response));
-        curImageId = response.next_image;
-
-        if (curImageId === -1) {
-          alert('You have marked all images!');
-          return;
-        }
-
-        curImageUrl = response.image_url;
-
-        curName = response.image_name;
-
-        $('#filename')
-          .text(curName.substring(curName.indexOf('/')));
-
-        initRaphael(curImageUrl);
-      },
-      error(msg) {
-        alert(JSON.stringify(msg));
-      },
-    });
-  }
 
   function getImageToReMark(remarkId) {
     mAnnoStore.clearData();
@@ -614,7 +590,7 @@ $(() => {
         $('#filename')
           .text(curName.substring(curName.indexOf('/')));
 
-        initRaphael(curImageUrl);
+        mAnnoStore.initRaphael(curImageUrl);
       },
       error(msg) {
         alert(JSON.stringify(msg));
@@ -650,7 +626,7 @@ $(() => {
         $('#filename')
           .text(curName.substring(curName.indexOf('/')));
 
-        initRaphael(curImageUrl);
+        mAnnoStore.initRaphael(curImageUrl);
 
         // $("#nextBtnRow").remove();
       },
@@ -690,7 +666,7 @@ $(() => {
         $('#usernameDisplay')
           .text(`You are logged in as ${privateUserName} (${response.marked}/${response.total} images marked)`);
         loginDialog.dialog('close');
-        nextImage();
+        mAnnoStore.nextImage();
       },
       error(msg) {
         alert(msg);
@@ -705,53 +681,6 @@ $(() => {
   // Finally prevents dragging on the image, which
   // would otherwise cause issues in FireFox
   // TODO: We're not done with this
-  function initRaphael(filename) {
-    if (typeof paper !== 'undefined') {
-      paper.remove();
-    }
-
-    // var imagePath = IMAGES_URL + filename;
-    // alert(imagePath);
-    const url = `${BASE_PATH}getImage.php?id=${curImageId}`;
-    const img = new Image();
-    const mCanvas = document.getElementById('canvas');
-    img.onload = () => {
-      const { height, width } = img;
-      if (width <= height) {
-        mCanvas.setAttribute('style', `width: ${CANVAS_SIZE_SHORT}px; height: ${CANVAS_SIZE_LONG}px;`);
-        paper = Raphael('canvas', CANVAS_SIZE_SHORT, CANVAS_SIZE_LONG);
-        paper.image(url, 0, 0, CANVAS_SIZE_SHORT, CANVAS_SIZE_LONG);
-        const resizeRatio = width / CANVAS_SIZE_SHORT;
-        mAnnoStore.canvasShape = { width: CANVAS_SIZE_SHORT, height: CANVAS_SIZE_LONG, resizeRatio };
-      } else {
-        mCanvas.setAttribute('style', `width: ${CANVAS_SIZE_LONG}px; height: ${CANVAS_SIZE_SHORT}px;`);
-        paper = Raphael('canvas', CANVAS_SIZE_LONG, CANVAS_SIZE_SHORT);
-        paper.image(url, 0, 0, CANVAS_SIZE_LONG, CANVAS_SIZE_SHORT);
-        const resizeRatio = height / CANVAS_SIZE_SHORT;
-        mAnnoStore.canvasShape = { width: CANVAS_SIZE_LONG, height: CANVAS_SIZE_SHORT, resizeRatio };
-      }
-    };
-    img.src = url;
-
-    $('img')
-      .on('dragstart', (event) => {
-        event.preventDefault();
-      });
-    $(document)
-      .on('dragstart', (e) => {
-        const nodeName = e.target.nodeName.toUpperCase();
-        if (nodeName === 'IMG' || nodeName === 'SVG' || nodeName === 'IMAGE') {
-          if (e.preventDefault) {
-            e.preventDefault();
-          }
-          return false;
-        }
-      });
-    $('#canvas')
-      .css('webkitTapHighlightColor', 'rgba(0,0,0,0)');
-    $('#canvas')
-      .css('webkitTouchCallout', 'none');
-  }
 });
 
 function updateProgress() {
