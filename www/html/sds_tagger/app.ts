@@ -305,7 +305,9 @@ class AnnoStore {
       if (value && value.length > 0) {
         contentObj[key] = [];
         for (const select of value) {
-          contentObj[key].push(select.pathArr);
+          // TODO: multiply by resize ratio
+          const myArr = select.pathArr.map((e) => e * this.canvasShape.resizeRatio);
+          contentObj[key].push(myArr);
         }
       }
     });

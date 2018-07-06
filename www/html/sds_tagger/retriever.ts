@@ -118,16 +118,17 @@ function addToTable(response, index) {
 
   const img = new Image();
   let paper;
+  let resizeRatio;
   img.onload = () => {
     const { height, width } = img;
     if (width <= height) {
       paper = Raphael(id, CANVAS_SIZE_SHORT, CANVAS_SIZE_LONG);
       paper.image(imageUrl, 0, 0, CANVAS_SIZE_SHORT, CANVAS_SIZE_LONG);
-      const resizeRatio = width / CANVAS_SIZE_SHORT;
+      resizeRatio = width / CANVAS_SIZE_SHORT;
     } else {
       paper = Raphael(id, CANVAS_SIZE_LONG, CANVAS_SIZE_SHORT);
       paper.image(imageUrl, 0, 0, CANVAS_SIZE_LONG, CANVAS_SIZE_SHORT);
-      const resizeRatio = height / CANVAS_SIZE_SHORT;
+      resizeRatio = height / CANVAS_SIZE_SHORT;
     }
 
     console.log(JSON.stringify(response.severities));
@@ -144,9 +145,11 @@ function addToTable(response, index) {
             const y1 = mPath[1];
             const x2 = x1 + mPath[2];
             const y2 = y1 + mPath[3];
-            const startX = Math.min(x1, x2);
-            const startY = Math.min(y1, y2);
-            paper.rect(startX, startY, Math.abs(mPath[2]), Math.abs(mPath[3]))
+            const startX = Math.min(x1, x2) / resizeRatio;
+            const startY = Math.min(y1, y2) / resizeRatio;
+            const endX = Math.abs(mPath[2]) / resizeRatio;
+            const endY = Math.abs(mPath[3]) / resizeRatio;
+            paper.rect(startX, startY, endX, endY)
               .attr({ 'stroke': color, 'stroke-width': 2 });
           }
         }
@@ -158,10 +161,9 @@ function addToTable(response, index) {
 }
 
 function colorForDisease(disease) {
-  for (const dis of disease) {
-    if (dis.id === disease) {
-      return dis.color;
+  for (const elem of diseases) {
+    if (elem.id === parseInt(disease, 10)) {
+      return elem.color;
     }
   }
-  return diseases[diseases.length - 1].color;
 }
