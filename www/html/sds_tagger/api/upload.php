@@ -5,7 +5,7 @@ error_reporting(-1);
 
 require_once 'db.php';
 
-function putData($image_id, $author, $paths, $severities, $is_poor_quality)
+function putData($image_id, $author, $paths, $is_poor_quality)
 {
   $conn = db_connect();
 
@@ -35,18 +35,6 @@ function putData($image_id, $author, $paths, $severities, $is_poor_quality)
 
 	  $stmt->close();
 
-	  $stmt = $conn->prepare("INSERT INTO Severity (mark_id, disease, severity) VALUES (?, ?, ?)");
-	  foreach ($severities as $kv) {
-		// get the {"1": 42} into $disease and $sev
-		// this is pretty jank
-		foreach ($kv as $disease => $sev){
-		$stmt->bind_param("iii", $mark_id, $disease, $sev);
-		$stmt->execute();
-		}
-	  }
-
-	  $stmt->close();
-
 	  return $mark_id;
   }
   
@@ -60,25 +48,6 @@ function putData($image_id, $author, $paths, $severities, $is_poor_quality)
 	  
 	  $mark_id = $row['mark_id'];
 	  
-	  //Remove all severities associated with old marking
-	  $stmt = $conn->prepare("DELETE FROM Severity WHERE mark_id = ?");
-	  $stmt->bind_param("i", $mark_id);
-	  $stmt->execute();
-	  $stmt->close();
-
-	  //Add new severities:
-	  $stmt = $conn->prepare("INSERT INTO Severity (mark_id, disease, severity) VALUES (?, ?, ?)");
-	  foreach ($severities as $kv) {
-		// get the {"1": 42} into $disease and $sev
-		// this is pretty jank
-		foreach ($kv as $disease => $sev){
-		$stmt->bind_param("iii", $mark_id, $disease, $sev);
-		$stmt->execute();
-		}
-	  }
-
-	  $stmt->close();
-
 	  return $mark_id;
   }
 }
@@ -87,7 +56,7 @@ $body = file_get_contents('php://input');
 $body = json_decode($body, true);
 
 try {
-  $mark_id = putData($body['image_id'], $body['author'], $body['paths'], $body['severities'], $body['poor_quality']);
+  $mark_id = putData($body['image_id'], $body['author'], $body['paths'], $body['poor_quality']);
   echo json_encode(array(
     "mark_id" => $mark_id
   ));

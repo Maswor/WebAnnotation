@@ -1,5 +1,8 @@
 {
     "require-dev": {
         "phpstan/phpstan": "^0.9.2"
+    },
+    "require": {
+        "psy/psysh": "@stable"
     }
 }

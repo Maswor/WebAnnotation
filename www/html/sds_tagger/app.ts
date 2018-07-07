@@ -280,6 +280,7 @@ class AnnoStore {
     const dataToSend = {
       image_id: `${curImageId}`, author: username, paths: pPaths, severities: [], poor_quality: false,
     };
+    console.log(JSON.stringify(dataToSend));
     $.ajax({
       url, type: 'POST', data: JSON.stringify(dataToSend), contentType: 'application/json; charset=utf-8',
       dataType: 'json', async: true,
@@ -768,22 +769,14 @@ function addItemToList(listId, id) {
 // index is used just for default colors
 function addOptionToOptions(optionObj, index) {
   // Overall li element that wraps color-box and disease name
-  const li = $('<li>', {
-    id: optionObj.id,
-    class: 'ui-state-default',
-
-  });
+  const li = $('<li>', { id: optionObj.id, class: 'ui-state-default' });
 
   // Goes around the color box to make it sized and centered correctly:
-  const colorWrapper = $('<span>', {
-    class: 'input-color',
-  });
+  const colorWrapper = $('<span>', { class: 'input-color' });
 
   // If user supplied a color, use it, otherwise use a default
   let colorStr = 'background-color: ';
-  if (optionObj.color) {
-    colorStr += optionObj.color;
-  } else {
+  if (optionObj.color) { colorStr += optionObj.color; } else {
     colorStr += DEFAULT_COLORS[index];
   }
   const colorBox = $('<span>', {
@@ -815,9 +808,7 @@ function getDiseases() {
     async: true,
     success(response) {
       // Remove default options:
-      $('#opList')
-        .empty();
-
+      $('#opList').empty();
       for (let i = 0; i < response.length; i++) {
         addOptionToOptions(response[i], i);
       }

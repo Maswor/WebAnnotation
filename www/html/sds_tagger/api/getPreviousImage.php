@@ -9,30 +9,28 @@ function getPrevImage($author)
 {
   $conn = db_connect();
 
-  $stmt = $conn->prepare("SELECT Images.orderIndex, Images.path FROM Images WHERE Images.image_id NOT IN (SELECT image_id FROM MarkedData WHERE author = ?) ORDER BY orderIndex LIMIT 1");
+  $stmt = $conn->prepare("SELECT image_id FROM MarkedData WHERE author = ? ORDER BY image_id DESC LIMIT 1");
   $stmt->bind_param("s", $author);
   $stmt->execute();
 
   $res = $stmt->get_result();
   $row = $res->fetch_assoc();
-  if ($row === null)  // no "current image" found, can happen when user has finished marking every image
-    $prev_orderIndex = 999999999;  // every image is less than 999999
-  else
-    $prev_orderIndex = $row['orderIndex'];
-	
-	
-	
-  $stmt = $conn->prepare("SELECT Images.image_id, Images.path FROM Images WHERE Images.orderIndex  < ? ORDER BY orderIndex  desc LIMIT 1");
-  
-  $stmt->bind_param("i", $prev_orderIndex);
-  $stmt->execute();
 
+  if ($row === null)  // no previous found, throw exception
+    return array( "id" => -1, "name" => "error getting previous order index");  // done
+  else
+    $image_id = $row['image_id'];
+
+  $stmt = $conn->prepare("SELECT path from Images WHERE image_id = ?");
+  $stmt->bind_param("i", $image_id);
+  $stmt->execute();
   $res = $stmt->get_result();
   $row = $res->fetch_assoc();
   if ($row === null)
-	return array( "id" => -1, "name" => "error getting previous order index");  // done
-  
-  return array( "id" => $row['image_id'], "name" => $row['path']);
+    return array( "id" => -1, "name" => "error getting previous order index");  // done
+  $path = $row['path'];
+
+  return array( "id" => $image_id, "name" => $path);
 }
 
 try {

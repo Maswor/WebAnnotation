@@ -4,7 +4,6 @@
   Given an author name, this script returns the id and name of the next image 
   the user should mark
 */
-
 ini_set('display_errors', 1);
 error_reporting(-1);
 
