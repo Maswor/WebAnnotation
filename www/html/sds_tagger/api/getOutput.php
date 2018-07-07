@@ -22,23 +22,8 @@ function getMarkData($author)
   
   
   while ($row = $res->fetch_assoc()) {
-	  
-	  $mark_id = $row['mark_id'];
-	  
-	  $sev_stmt = $conn->prepare("SELECT disease, severity FROM Severity WHERE mark_id = ?");
-	  $sev_stmt->bind_param("i", $mark_id);
-	  $sev_stmt->execute();
-	  $sev_res = $sev_stmt->get_result();
-	  $severities = array();
-	  while ($sev_row = $sev_res->fetch_assoc()) {
-		array_push($severities, $sev_row);
-	  }
-	  $sev_stmt->close();
-
-	  array_push($mark_data, array("mark_id"=> $mark_id, "image_id"=> $row['image_id'], "severities" => $severities, "path"=> $row['path']) );
+    array_push($mark_data, array("mark_id"=> $row['mark_id'], "image_id"=> $row['image_id'], "path"=> $row['path']) );
   }
-  $stmt->close();
-
   return $mark_data;
 }
 

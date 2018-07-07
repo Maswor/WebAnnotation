@@ -81,16 +81,16 @@ function addToTable(response, index) {
   const imageUrl = BASE_PATH + 'getImage.php?id=' + originalId;
   // console.log(imageUrl);
   const tr = $('<tr>');
-  const tdMarked = $('<td>', { witdh: 512, height: 512 });
+  // const tdMarked = $('<td>', { witdh: 512, height: 512 });
   const id = 'canvas' + index;
-  $('<div>', { id, width: 512, height: 512 }).appendTo(tdMarked);
-  tdMarked.appendTo(tr);
-  const btnTd = $('<td>');
+  $('<div>', { id }).appendTo(tr);
+  // tdMarked.appendTo(tr);
+  const btnTd = $('<tr>');
   const link = $('<a>', { href: 'index.html?remark_id=' + originalId + '&author=' + username }).appendTo(btnTd);
 
   $('<button>', { text: 'Re-mark this image' }).appendTo(link);
   btnTd.appendTo(tr);
-  const inlineBtnTd = $('<td>');
+  // const inlineBtnTd = $('<td>');
   const inlineBtn = $('<button>', { text: 'Remark inline' });
 
   inlineBtn.click(() => {
@@ -108,8 +108,8 @@ function addToTable(response, index) {
     inlineBtn.unbind('click');
     inlineBtn.click(() => { trWrapper.remove(); });
   });
-  inlineBtn.appendTo(inlineBtnTd);
-  inlineBtnTd.appendTo(tr);
+  inlineBtn.appendTo(btnTd);
+  // inlineBtnTd.appendTo(tr);
 
   tr.appendTo('#table');
 
@@ -131,7 +131,7 @@ function addToTable(response, index) {
       resizeRatio = height / CANVAS_SIZE_SHORT;
     }
 
-    console.log(JSON.stringify(response.severities));
+    // console.log(JSON.stringify(response.severities));
 
     if (response.path && response.path.length > 2) {
       const path = JSON.parse(response.path);
