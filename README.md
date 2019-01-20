@@ -1,6 +1,6 @@
-# Project Title
+# WebAnnotation
 
-One Paragraph of project description goes here
+WebAnnotation is a web application for making annotation tags, used primarily in applying machine learning project.
 
 ## Getting Started
 
@@ -18,16 +18,22 @@ Give examples
 
 A step by step series of examples that tell you how to get a development env running
 
-Say what the step will be
+Change the directory to root project folder
 
 ```
-Give the example
+cd /WebAnnotation/www/html/sds_tagger
 ```
 
-And repeat
+Install project dependencies
 
 ```
-until finished
+npm install
+```
+
+Compile the source code
+
+```
+npx webpack
 ```
 
 End with an example of getting some data out of the system or using it for a little demo
@@ -58,31 +64,32 @@ Add additional notes about how to deploy this on a live system
 
 ## Built With
 
-* [Dropwizard](http://www.dropwizard.io/1.0.2/docs/) - The web framework used
-* [Maven](https://maven.apache.org/) - Dependency Management
-* [ROME](https://rometools.github.io/rome/) - Used to generate RSS Feeds
+* [Typescript](https://www.typescriptlang.org/) - A superset of Javascript, used for the app logic
+* [Webpack](https://webpack.js.org/) - Provide framework for working with web related technology
+* [Node.js](https://nodejs.org/en/) - Provide framework for working with web related technology
+* [PHP](http://www.php.net/) - Server side app 
+* [Apache Server](https://httpd.apache.org/) - http server
+* [MySql](https://www.mysql.com/) - database
 
 ## Contributing
 
-Please read [CONTRIBUTING.md](https://gist.github.com/PurpleBooth/b24679402957c63ec426) for details on our code of conduct, and the process for submitting pull requests to us.
+We follow Iowa State University [authorship policy](https://www.policy.iastate.edu/authorship), please send requests to us at the address: baskarg@iastate.edu
 
 ## Versioning
 
-We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/your/project/tags). 
+We use [git](https://git-scm.com/) for versioning. For the versions available, use the [git tagging](https://git-scm.com/book/en/v2/Git-Basics-Tagging). 
 
 ## Authors
+* **Truong Tran** - *App-Server communication, Interface, Touch support* - [LinkedIn](https://vn.linkedin.com/in/truong-tran-62643194)
+* **Alect lofquist** - *SQL database*
+* **Jacob Stimes** - *initial interface*
 
-* **Billie Thompson** - *Initial work* - [PurpleBooth](https://github.com/PurpleBooth)
-
-See also the list of [contributors](https://github.com/your/project/contributors) who participated in this project.
+See also the research project info at [lab website](https://baskar-group.me.iastate.edu/) for detail information.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
+Copyright 2018 Baskar Ganapathysubramanian, all rights reserved
 
 ## Acknowledgments
 
-* Hat tip to anyone whose code was used
-* Inspiration
-* etc
-
+We gratefully acknowledge support from Plant Science Institute at Iowa State University.
