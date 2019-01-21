@@ -4,6 +4,8 @@ WebAnnotation is a web application for making annotation tags, used primarily in
 
 ## Getting Started
 
+![alt text](./README_IMGS/screenshot.png "Logo Title Text 1")
+
 WebAnnotation consit of a Webapp, a server and a database so it will take a bit of time to install. We recommend installing on an Unix OS (Preferbly Ubuntu LTS version). For other OSs, please follow platform specific steps to install the required softwares.
 
 ### Prerequisites
@@ -27,9 +29,16 @@ PHP for server side scripting
 sudo apt install php7.2 libapache2-mod-php7.2 php-mysql
 ```
 
+Install Node.js v8.x for writing web app
+
+```
+curl -sL https://deb.nodesource.com/setup_10.x | sudo -E bash -
+sudo apt-get install -y nodejs
+
+```
+
 ### Installing
 
-A step by step series of examples that tell you how to get a development env running
 
 Change the directory to root project folder
 
